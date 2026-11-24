@@ -528,12 +528,9 @@
     $('d-src').value = ''; $('d-out').value = '';
     $('d-src-stats').textContent = ''; $('d-out-stats').textContent = ''; $('d-out-hint').textContent = '';
     $('d-author').value = ''; dlg.author = '';
-    return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .then(function (rsp) {
-        if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
-        var data = rsp.data;
-        dlg.source = data.content || ''; dlg.encoding = data.encoding || 'utf-8'; dlg.size = data.size || 0;
+    return fetchSourceText(book)
+      .then(function (data) {
+        dlg.source = data.text || ''; dlg.encoding = data.encoding || 'utf-8'; dlg.size = data.size || 0;
         $('d-src').value = dlg.source.slice(0, DISPLAY_LIMIT);
         $('d-src-enc').textContent = dlg.encoding;
         $('d-src-size').textContent = t('stats.kb', { size: Math.round(dlg.size / 1024) });
@@ -634,6 +631,71 @@
     a.href = url; a.download = name + '.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
     log(t('log.exported', { name: name }));
+  }
+
+  // 旧版服务端会把 GBK 的 TXT 按 UTF-8 解码成乱码；这里改为下载原始字节，
+  // 在浏览器里按 BOM / UTF-8 严格校验 / 常用字命中率判断编码后解码。
+  var COMMON_HANZI = '的一是了我不人在他有这个上们来到时大地为子中你说生国年着就那和要她出也得里后自以会家可下而过天去能对小多然于心学么之都好看起发当没成只如事把还用第样道想作种开美总从无情己面最女但现前些所同日手又行意动方期它头经长儿回位分爱老因很给名法间斯知世什两次使身者被高已亲其进此话常与活正感';
+
+  function scoreCandidates(text) {
+    var hits = 0;
+    for (var i = 0; i < COMMON_HANZI.length; i++) {
+      if (text.indexOf(COMMON_HANZI[i]) !== -1) hits++;
+    }
+    var bad = (text.match(/\uFFFD/g) || []).length;
+    return hits - bad * 5;
+  }
+
+  function decodeNovelBytes(buffer) {
+    var u8 = new Uint8Array(buffer);
+    if (u8.length >= 3 && u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF) {
+      return { text: new TextDecoder('utf-8').decode(u8.subarray(3)), encoding: 'utf-8' };
+    }
+    if (u8.length >= 2 && u8[0] === 0xFF && u8[1] === 0xFE) {
+      return { text: new TextDecoder('utf-16le').decode(u8.subarray(2)), encoding: 'utf-16' };
+    }
+    if (u8.length >= 2 && u8[0] === 0xFE && u8[1] === 0xFF) {
+      return { text: new TextDecoder('utf-16be').decode(u8.subarray(2)), encoding: 'utf-16' };
+    }
+    var sample = u8.subarray(0, Math.min(65536, u8.length));
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(sample);
+      return { text: new TextDecoder('utf-8').decode(u8), encoding: 'utf-8' };
+    } catch (e) { /* 不是 UTF-8，继续猜中文编码 */ }
+
+    var candidates = ['gb18030', 'big5'];
+    var best = null;
+    candidates.forEach(function (enc) {
+      var sampleText;
+      try { sampleText = new TextDecoder(enc, { fatal: false }).decode(sample); }
+      catch (e) { return; }
+      var score = scoreCandidates(sampleText);
+      if (!best || score > best.score) best = { enc: enc, score: score };
+    });
+    var chosen = best ? best.enc : 'gb18030';
+    return { text: new TextDecoder(chosen).decode(u8), encoding: chosen };
+  }
+
+  function fetchSourceText(book) {
+    // 优先拿原始文件字节（旧版接口也存在），失败再退回排版接口
+    return fetch('/api/book/' + book.id + '.TXT', { credentials: 'include' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('download-failed');
+        return r.arrayBuffer();
+      })
+      .then(function (buf) {
+        var decoded = decodeNovelBytes(buf);
+        decoded.size = buf.byteLength;
+        return decoded;
+      })
+      .catch(function () {
+        return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (rsp) {
+            if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
+            return { text: rsp.data.content || '', encoding: rsp.data.encoding || 'utf-8', size: rsp.data.size || 0 };
+          });
+      });
   }
 
   function runWorker(op, text, options) {
