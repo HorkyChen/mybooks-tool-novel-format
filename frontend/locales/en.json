@@ -95,5 +95,14 @@
   "err.convert": "Convert failed: {msg}",
   "notify.done": "Finished: {covered} overwritten, {skipped} skipped",
   "dlg.minimize": "Minimize",
-  "action.restore": "Restore"
+  "action.restore": "Restore",
+  "done.skippedTitle": "Skipped books",
+  "done.noSkip": "No books were skipped",
+  "skip.reason.manual": "Skipped manually",
+  "skip.reason.tag": "Already tagged “精校”",
+  "skip.reason.no_txt": "No TXT format",
+  "skip.reason.too_large": "File exceeds 100 MB",
+  "skip.reason.read_failed": "Read failed",
+  "skip.reason.format_failed": "Format failed",
+  "skip.reason.cover_failed": "Overwrite failed"
 }

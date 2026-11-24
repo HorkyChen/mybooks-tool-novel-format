@@ -95,5 +95,14 @@
   "err.convert": "轉換失敗：{msg}",
   "notify.done": "排版完成：覆蓋 {covered} 本，跳過 {skipped} 本",
   "dlg.minimize": "最小化",
-  "action.restore": "還原"
+  "action.restore": "還原",
+  "done.skippedTitle": "跳過明細",
+  "done.noSkip": "本批次沒有跳過的書籍",
+  "skip.reason.manual": "手動跳過",
+  "skip.reason.tag": "已帶「精校」標籤",
+  "skip.reason.no_txt": "沒有 TXT 格式",
+  "skip.reason.too_large": "檔案超過 100MB",
+  "skip.reason.read_failed": "讀取失敗",
+  "skip.reason.format_failed": "排版失敗",
+  "skip.reason.cover_failed": "覆蓋失敗"
 }

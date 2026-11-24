@@ -195,7 +195,16 @@
     .mini-bar.show { display: flex; }
     .mini-bar__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mb-color-primary); flex: 0 0 auto; }
     .mini-bar__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .done { padding: 48px 24px; text-align: center; }
+    .dialog.done-mode { height: auto; min-height: 280px; max-height: 76vh; }
+    .dialog.done-mode .dlg-foot, .dialog.done-mode #dlg-skip, .dialog.done-mode #dlg-min { display: none; }
+    .done { padding: 32px 24px; text-align: center; }
+    .skip-list { max-width: 640px; margin: 14px auto 20px; text-align: left; max-height: 38vh; overflow: auto; }
+    .skip-list .skip-title { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .skip-list ul { list-style: none; margin: 0; padding: 0; }
+    .skip-list li { display: flex; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+    .skip-list li:last-child { border-bottom: 0; }
+    .skip-list .skip-book { flex: 0 0 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .skip-list .skip-reason { flex: 1 1 auto; color: var(--muted); }
     .done h2 { font-size: 20px; font-weight: 500; margin: 0 0 10px; }
     .done p { color: var(--muted); margin: 0 0 22px; }
   </style>
@@ -384,6 +393,7 @@
     <div id="dlg-done" class="done" style="display:none;">
       <h2 data-i18n="done.title">本批次已处理完毕</h2>
       <p id="done-summary"></p>
+      <div id="done-skips" class="skip-list"></div>
       <button id="done-close" class="btn btn--primary" data-i18n="action.close">关闭</button>
     </div>
   </div>
@@ -462,7 +472,7 @@
     tb.querySelectorAll('input[data-id]').forEach(function (cb) {
       cb.addEventListener('change', function () {
         var id = Number(cb.getAttribute('data-id'));
-        if (cb.checked) { var bk = state.items.find(function (x) { return x.id === id; }); state.selected.set(id, { id: id, title: bk ? bk.title : String(id) }); }
+        if (cb.checked) { var bk = state.items.find(function (x) { return x.id === id; }); state.selected.set(id, { id: id, title: bk ? bk.title : String(id), tags: (bk && bk.tags) || [], has_txt: bk ? bookHasTxt(bk) : true }); }
         else state.selected.delete(id);
         cb.closest('tr').classList.toggle('is-selected', cb.checked);
         renderSel();
@@ -476,6 +486,12 @@
     renderSel();
   }
 
+  function bookHasTxt(b) {
+    if (typeof b.has_txt === 'boolean') return b.has_txt;
+    var list = (b.files || []).map(function (f) { return String((f && f.format) || f).toUpperCase(); });
+    return list.indexOf('TXT') !== -1;
+  }
+
   function renderSel() {
     $('sel-count').textContent = t('sel.count', { count: state.selected.size });
     $('start-btn').disabled = state.running || state.selected.size === 0;
@@ -483,11 +499,26 @@
 
   var dlg = { books: [], index: 0, source: '', result: '', encoding: 'utf-8', size: 0, covered: [], skipped: [], author: '', logs: [] };
   function currentBook() { return dlg.books[dlg.index]; }
+  function skipReasonText(item) {
+    var map = {
+      manual: 'skip.reason.manual', tag: 'skip.reason.tag', no_txt: 'skip.reason.no_txt',
+      too_large: 'skip.reason.too_large', read_failed: 'skip.reason.read_failed',
+      format_failed: 'skip.reason.format_failed', cover_failed: 'skip.reason.cover_failed'
+    };
+    var base = t(map[item.type] || 'skip.reason.read_failed');
+    return item.msg ? base + '：' + item.msg : base;
+  }
+  function recordSkip(book, type, msg) {
+    if (!book) return;
+    dlg.skipped.push({ id: book.id, title: book.title || ('#' + book.id), type: type, msg: msg || '' });
+    updateHead();
+  }
   function log(msg) { dlg.logs.push(new Date().toTimeString().slice(0, 8) + ' ' + msg); $('d-log').textContent = dlg.logs.slice(-80).join('\n'); $('d-log').scrollTop = $('d-log').scrollHeight; }
 
   function openDialog() {
     dlg.books = Array.from(state.selected.values());
     dlg.index = 0; dlg.covered = []; dlg.skipped = []; dlg.logs = [];
+    $('dialog').classList.remove('done-mode');
     $('dlg-done').style.display = 'none'; $('dlg-main').style.display = 'block';
     $('overlay').classList.add('open'); $('dialog').classList.add('open');
     loadCurrent();
@@ -525,6 +556,14 @@
   function loadCurrent() {
     var book = currentBook(); if (!book) return finish();
     updateHead();
+    if (book.tags && book.tags.indexOf('精校') !== -1) {
+      recordSkip(book, 'tag'); log(t('log.skipped', { title: book.title || '' }));
+      return advance();
+    }
+    if (book.has_txt === false) {
+      recordSkip(book, 'no_txt'); log(t('log.skipped', { title: book.title || '' }));
+      return advance();
+    }
     $('d-src').value = ''; $('d-out').value = '';
     $('d-src-stats').textContent = ''; $('d-out-stats').textContent = ''; $('d-out-hint').textContent = '';
     $('d-author').value = ''; dlg.author = '';
@@ -540,7 +579,11 @@
         $('d-author').value = dlg.author;
         if ($('d-auto').checked) process();
       })
-      .catch(function (err) { log(t('log.readFailed', { msg: err.message || err })); dlg.skipped.push(book.id); if ($('d-auto').checked) advance(); });
+      .catch(function (err) {
+        log(t('log.readFailed', { msg: err.message || err }));
+        recordSkip(book, (err && err.code) === 'too_large' ? 'too_large' : 'read_failed', (err && err.code) === 'too_large' ? '' : (err.message || err));
+        if ($('d-auto').checked) advance();
+      });
   }
 
   function options() {
@@ -572,7 +615,11 @@
         if ($('d-autoexport').checked) exportFile();
         if ($('d-auto').checked) return cover(true);
       })
-      .catch(function (err) { log(t('log.processFailed', { msg: err.message || err })); })
+      .catch(function (err) {
+        log(t('log.processFailed', { msg: err.message || err }));
+        recordSkip(currentBook(), 'format_failed', err.message || err);
+        if ($('d-auto').checked) return advance();
+      })
       .finally(function () { $('d-process').disabled = false; });
   }
 
@@ -586,13 +633,18 @@
       .then(function (rsp) {
         if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
         if (dlg.covered.indexOf(book.id) === -1) dlg.covered.push(book.id);
+        dlg.skipped = dlg.skipped.filter(function (x) { return x.id !== book.id; });
         if (rsp.data && rsp.data.tagged === false) log(t('log.tagMissing'));
         log(t('log.covered', { title: book.title || '' }));
         updateHead();
         if (auto) return advance();
         return true;
       })
-      .catch(function (err) { log(t('log.coverFailed', { msg: err.message || err })); if (auto) return advance(); return false; })
+      .catch(function (err) {
+        log(t('log.coverFailed', { msg: err.message || err }));
+        recordSkip(book, 'cover_failed', err.message || err);
+        if (auto) return advance(); return false;
+      })
       .finally(function () { $('d-cover').disabled = false; });
   }
 
@@ -607,8 +659,19 @@
 
   function finish() {
     $('mini-bar').classList.remove('show');
+    $('dialog').classList.add('done-mode');
     $('dlg-main').style.display = 'none'; $('dlg-done').style.display = 'block';
     $('done-summary').textContent = t('done.summary', { total: dlg.books.length, covered: dlg.covered.length, skipped: dlg.skipped.length });
+    if (dlg.skipped.length) {
+      var html = '<div class="skip-title">' + esc(t('done.skippedTitle')) + '</div><ul>';
+      dlg.skipped.forEach(function (item) {
+        html += '<li><span class="skip-book" title="' + esc(item.title) + '">' + esc(item.title) + '</span>' +
+                '<span class="skip-reason">' + esc(skipReasonText(item)) + '</span></li>';
+      });
+      $('done-skips').innerHTML = html + '</ul>';
+    } else {
+      $('done-skips').innerHTML = '<div class="hint">' + esc(t('done.noSkip')) + '</div>';
+    }
     $('dlg-bar').style.width = '100%'; $('dlg-percent').textContent = '100%';
     state.running = false; renderSel();
     if (window.MyBooksToolBridge && window.MyBooksToolBridge.notify) {
@@ -681,6 +744,8 @@
     return fetch('/api/book/' + book.id + '.TXT', { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) throw new Error('download-failed');
+        var len = Number(r.headers.get('Content-Length') || 0);
+        if (len > 100 * 1024 * 1024) { var e = new Error('too large'); e.code = 'too_large'; throw e; }
         return r.arrayBuffer();
       })
       .then(function (buf) {
@@ -727,7 +792,7 @@
   $('jump').addEventListener('change', function () { var pages = Math.max(1, Math.ceil(state.total / state.num)); state.page = Math.min(pages, Math.max(1, Number(this.value) || 1)); loadBooks(); });
   $('check-page').addEventListener('change', function () {
     var on = this.checked;
-    state.items.forEach(function (b) { if (on) state.selected.set(b.id, { id: b.id, title: b.title }); else state.selected.delete(b.id); });
+    state.items.forEach(function (b) { if (on) state.selected.set(b.id, { id: b.id, title: b.title, tags: b.tags || [], has_txt: bookHasTxt(b) }); else state.selected.delete(b.id); });
     render();
   });
   $('clear-sel').addEventListener('click', function () { state.selected.clear(); $('check-page').checked = false; render(); });
@@ -736,7 +801,11 @@
   $('mini-restore').addEventListener('click', restoreDialog);
   $('dlg-close').addEventListener('click', closeDialog);
   $('done-close').addEventListener('click', closeDialog);
-  $('dlg-skip').addEventListener('click', function () { var b = currentBook(); if (b) { dlg.skipped.push(b.id); log(t('log.skipped', { title: b.title || '' })); } advance(); });
+  $('dlg-skip').addEventListener('click', function () {
+    var b = currentBook();
+    if (b) { recordSkip(b, 'manual'); log(t('log.skipped', { title: b.title || '' })); }
+    advance();
+  });
   $('d-process').addEventListener('click', function () { process(); });
   $('d-cover').addEventListener('click', function () { cover(false); });
   $('d-finish').addEventListener('click', function () { if (dlg.result) return cover(false).then(function (ok) { if (ok) advance(); }); advance(); });
