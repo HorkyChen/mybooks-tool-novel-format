@@ -104,5 +104,6 @@
   "skip.reason.too_large": "File exceeds 100 MB",
   "skip.reason.read_failed": "Read failed",
   "skip.reason.format_failed": "Format failed",
-  "skip.reason.cover_failed": "Overwrite failed"
+  "skip.reason.cover_failed": "Overwrite failed",
+  "skip.reason.decode_failed": "Unknown encoding; file may be corrupted"
 }

@@ -502,7 +502,7 @@
   function skipReasonText(item) {
     var map = {
       manual: 'skip.reason.manual', tag: 'skip.reason.tag', no_txt: 'skip.reason.no_txt',
-      too_large: 'skip.reason.too_large', read_failed: 'skip.reason.read_failed',
+      too_large: 'skip.reason.too_large', decode_failed: 'skip.reason.decode_failed', read_failed: 'skip.reason.read_failed',
       format_failed: 'skip.reason.format_failed', cover_failed: 'skip.reason.cover_failed'
     };
     var base = t(map[item.type] || 'skip.reason.read_failed');
@@ -581,7 +581,10 @@
       })
       .catch(function (err) {
         log(t('log.readFailed', { msg: err.message || err }));
-        recordSkip(book, (err && err.code) === 'too_large' ? 'too_large' : 'read_failed', (err && err.code) === 'too_large' ? '' : (err.message || err));
+        var code = err && err.code;
+        if (code === 'too_large') recordSkip(book, 'too_large');
+        else if (code === 'decode_failed') recordSkip(book, 'decode_failed');
+        else recordSkip(book, 'read_failed', err.message || err);
         if ($('d-auto').checked) advance();
       });
   }
@@ -736,6 +739,12 @@
       if (!best || score > best.score) best = { enc: enc, score: score };
     });
     var chosen = best ? best.enc : 'gb18030';
+    // 常用字命中数太低说明两种候选都解不出像样中文：宁可报错，也不要把乱码写回书库
+    if (!best || best.score < 20) {
+      var err = new Error('decode failed');
+      err.code = 'decode_failed';
+      throw err;
+    }
     return { text: new TextDecoder(chosen).decode(u8), encoding: chosen };
   }
 
@@ -753,7 +762,8 @@
         decoded.size = buf.byteLength;
         return decoded;
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (err && err.code === 'decode_failed') throw err;
         return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
           .then(function (r) { return r.json(); })
           .then(function (rsp) {

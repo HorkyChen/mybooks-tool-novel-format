@@ -104,5 +104,6 @@
   "skip.reason.too_large": "文件超过 100MB",
   "skip.reason.read_failed": "读取失败",
   "skip.reason.format_failed": "排版失败",
-  "skip.reason.cover_failed": "覆盖失败"
+  "skip.reason.cover_failed": "覆盖失败",
+  "skip.reason.decode_failed": "编码无法识别，文件可能已损坏"
 }
