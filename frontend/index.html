@@ -183,6 +183,13 @@
 
     .dlg-foot { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--line); background: var(--card-bg); }
     .dlg-foot .grow { flex: 1 1 auto; }
+    .mini-bar { position: fixed; right: 20px; bottom: 20px; z-index: 80; display: none;
+      align-items: center; gap: 10px; max-width: min(460px, 90vw);
+      padding: 10px 14px; border-radius: 999px; background: var(--card-bg);
+      border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; }
+    .mini-bar.show { display: flex; }
+    .mini-bar__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mb-color-primary); flex: 0 0 auto; }
+    .mini-bar__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .done { padding: 48px 24px; text-align: center; }
     .done h2 { font-size: 20px; font-weight: 500; margin: 0 0 10px; }
     .done p { color: var(--muted); margin: 0 0 22px; }
@@ -252,6 +259,7 @@
     <div class="dlg-title-row">
       <h2 class="dlg-title" data-i18n="dlg.title">小说排版整理</h2>
       <span class="grow"></span>
+      <button id="dlg-min" class="dlg-close" data-i18n-attr="title:dlg.minimize">–</button>
       <button id="dlg-close" class="dlg-close" data-i18n-attr="title:dlg.close">×</button>
     </div>
     <div class="dlg-meta">
@@ -381,6 +389,12 @@
   </div>
 </div>
 
+<div id="mini-bar" class="mini-bar">
+  <span class="mini-bar__dot"></span>
+  <span id="mini-text" class="mini-bar__text"></span>
+  <button id="mini-restore" class="btn btn--sm" data-i18n="action.restore">还原</button>
+</div>
+
 <script src="/static/toolbox-bridge.js"></script>
 <script src="lib/novel.js"></script>
 <script src="lib/i18n.js"></script>
@@ -473,7 +487,26 @@
     $('overlay').classList.add('open'); $('dialog').classList.add('open');
     loadCurrent();
   }
-  function closeDialog() { $('overlay').classList.remove('open'); $('dialog').classList.remove('open'); state.running = false; renderSel(); }
+  function closeDialog() {
+    $('overlay').classList.remove('open'); $('dialog').classList.remove('open');
+    $('mini-bar').classList.remove('show');
+    state.running = false; renderSel();
+  }
+  function minimizeDialog() {
+    $('overlay').classList.remove('open'); $('dialog').classList.remove('open');
+    $('mini-bar').classList.add('show');
+    updateMini();
+  }
+  function restoreDialog() {
+    $('mini-bar').classList.remove('show');
+    $('overlay').classList.add('open'); $('dialog').classList.add('open');
+  }
+  function updateMini() {
+    var total = dlg.books.length || 0;
+    if (!total) return;
+    $('mini-text').textContent = t('dlg.progress', { index: Math.min(dlg.index + 1, total), total: total }) +
+      ' · ' + t('dlg.covered', { count: dlg.covered.length });
+  }
   function updateHead() {
     var total = dlg.books.length || 1;
     $('dlg-progress-text').textContent = t('dlg.progress', { index: Math.min(dlg.index + 1, total), total: total });
@@ -481,6 +514,7 @@
     $('dlg-skipped').textContent = t('dlg.skipped', { count: dlg.skipped.length });
     var pct = Math.round(dlg.index * 100 / total);
     $('dlg-percent').textContent = pct + '%'; $('dlg-bar').style.width = pct + '%';
+    updateMini();
   }
 
   function loadCurrent() {
@@ -526,7 +560,7 @@
         body: JSON.stringify({ text: text, direction: mode }) })
       .then(function (r) { return r.json(); })
       .then(function (rsp) { if (rsp.err !== 'ok') throw new Error(rsp.msg || t('err.convert', { msg: '' })); return rsp.data.text; });
-    return pre.then(function (x) { return window.NovelFmt.formatNovelText(x, options()); })
+    return pre.then(function (x) { return runWorker('format', x, options()); })
       .then(function (out) {
         dlg.result = out;
         $('d-out').value = out.slice(0, DISPLAY_LIMIT);
@@ -570,6 +604,7 @@
   }
 
   function finish() {
+    $('mini-bar').classList.remove('show');
     $('dlg-main').style.display = 'none'; $('dlg-done').style.display = 'block';
     $('done-summary').textContent = t('done.summary', { total: dlg.books.length, covered: dlg.covered.length, skipped: dlg.skipped.length });
     $('dlg-bar').style.width = '100%'; $('dlg-percent').textContent = '100%';
@@ -596,6 +631,25 @@
     log(t('log.exported', { name: name }));
   }
 
+  function runWorker(op, text, options) {
+    return new Promise(function (resolve, reject) {
+      var worker;
+      try { worker = new Worker('lib/novel-worker.js'); }
+      catch (e) { reject(e); return; }
+      var done = false;
+      worker.onmessage = function (ev) {
+        var data = ev.data || {};
+        done = true; worker.terminate();
+        if (data.ok) resolve(data.result); else reject(new Error(data.error || 'worker error'));
+      };
+      worker.onerror = function (err) {
+        if (done) return;
+        worker.terminate(); reject(new Error((err && err.message) || 'worker error'));
+      };
+      worker.postMessage({ op: op, text: text, options: options || {} });
+    });
+  }
+
   function syncIndentRow() { $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none'; }
 
   $('search-btn').addEventListener('click', function () { state.search = $('q').value.trim(); state.page = 1; loadBooks(); });
@@ -611,6 +665,8 @@
   });
   $('clear-sel').addEventListener('click', function () { state.selected.clear(); $('check-page').checked = false; render(); });
   $('start-btn').addEventListener('click', function () { if (!state.selected.size) return; state.running = true; renderSel(); openDialog(); });
+  $('dlg-min').addEventListener('click', minimizeDialog);
+  $('mini-restore').addEventListener('click', restoreDialog);
   $('dlg-close').addEventListener('click', closeDialog);
   $('done-close').addEventListener('click', closeDialog);
   $('dlg-skip').addEventListener('click', function () { var b = currentBook(); if (b) { dlg.skipped.push(b.id); log(t('log.skipped', { title: b.title || '' })); } advance(); });

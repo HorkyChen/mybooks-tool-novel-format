@@ -93,5 +93,7 @@
   "err.read": "读取失败：{msg}",
   "err.cover": "覆盖失败：{msg}",
   "err.convert": "转换失败：{msg}",
-  "notify.done": "排版完成：覆盖 {covered} 本，跳过 {skipped} 本"
+  "notify.done": "排版完成：覆盖 {covered} 本，跳过 {skipped} 本",
+  "dlg.minimize": "最小化",
+  "action.restore": "还原"
 }

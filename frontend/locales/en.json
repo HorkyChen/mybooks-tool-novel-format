@@ -93,5 +93,7 @@
   "err.read": "Read failed: {msg}",
   "err.cover": "Overwrite failed: {msg}",
   "err.convert": "Convert failed: {msg}",
-  "notify.done": "Finished: {covered} overwritten, {skipped} skipped"
+  "notify.done": "Finished: {covered} overwritten, {skipped} skipped",
+  "dlg.minimize": "Minimize",
+  "action.restore": "Restore"
 }
