@@ -725,9 +725,17 @@
     }
     var sample = u8.subarray(0, Math.min(65536, u8.length));
     try {
-      new TextDecoder('utf-8', { fatal: true }).decode(sample);
+      new TextDecoder('utf-8', { fatal: true }).decode(sample, { stream: true });
       return { text: new TextDecoder('utf-8').decode(u8), encoding: 'utf-8' };
-    } catch (e) { /* 不是 UTF-8，继续猜中文编码 */ }
+    } catch (e) { /* 样本里有非法字节，下面再看是不是「几乎全是 UTF-8」 */ }
+
+    // 少量坏字节（截断、混入个别非 UTF-8 片段）不应该让整本改按 GBK 解码：
+    // 只要坏字节占比很低，仍按 UTF-8 解，坏字节会变成 U+FFFD，别的部分保持可读。
+    var utf8Sample = new TextDecoder('utf-8').decode(sample, { stream: true });
+    var badChars = (utf8Sample.match(/\uFFFD/g) || []).length;
+    if (utf8Sample.length > 0 && badChars / utf8Sample.length < 0.005) {
+      return { text: new TextDecoder('utf-8').decode(u8), encoding: 'utf-8' };
+    }
 
     var candidates = ['gb18030', 'big5'];
     var best = null;
