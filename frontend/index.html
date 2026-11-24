@@ -150,7 +150,9 @@
     .process-row { display: flex; gap: 10px; margin: 16px 0; align-items: stretch; }
     .btn--block { flex: 1 1 auto; height: 46px; font-size: 15px; }
 
-    .group-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
+    .divider { height: 1px; background: var(--line); margin: 14px 0 10px; }
+    .rules-title { margin: 18px 2px 4px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+    .group-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
     .group-title:first-child { margin-top: 4px; }
     .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13.5px; }
     .switch-row.sub { padding-left: 18px; color: var(--muted); }
@@ -173,7 +175,7 @@
     .select { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg);
       color: var(--text); padding: 0 8px; font-size: 13px; }
 
-    .rules { margin: 18px 2px 0; padding: 0; list-style: none; color: var(--muted); font-size: 12.5px; line-height: 1.8; }
+    .rules { margin: 0 2px; padding: 0; list-style: none; color: var(--muted); font-size: 12.5px; line-height: 1.8; }
     .rules li::before { content: "·"; margin-right: 8px; }
     .log { margin-top: 12px; max-height: 130px; overflow: auto; white-space: pre-wrap;
       font-size: 12.5px; color: var(--muted); background: color-mix(in srgb, var(--text) 4%, transparent);
@@ -304,33 +306,20 @@
             <div class="panel-title">配置选项</div>
             <div class="panel-body">
               <div class="group-title">段落排版</div>
-              <div class="switch-row"><span>智能换行</span><label class="switch"><input type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
-              <div class="switch-row"><span>段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
+              <div class="switch-row"><span>智能换行</span><label class="switch"><input id="d-smart" type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
+              <div class="switch-row" id="d-indent-row"><span>段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
               <div class="switch-row"><span>长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit" checked><span></span></label></div>
               <div class="switch-row"><span>清理首尾空格</span><label class="switch"><input type="checkbox" data-opt="enableTrim" checked><span></span></label></div>
 
+              <div class="divider"></div>
               <div class="group-title">章节处理</div>
               <div class="switch-row"><span>章节标题分行</span><label class="switch"><input type="checkbox" data-opt="enableChapterSplit" checked><span></span></label></div>
               <div class="switch-row"><span>合并重复章节标题</span><label class="switch"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked><span></span></label></div>
               <div class="switch-row"><span>去除重复行</span><label class="switch"><input type="checkbox" data-opt="removeDuplicateLines" checked><span></span></label></div>
-              <div class="switch-row"><span>去掉行尾数字</span><label class="switch"><input type="checkbox" data-opt="enableLineEndNumbers"><span></span></label></div>
 
-              <div class="group-title">高级</div>
-              <div class="switch-row"><span>自动覆盖（处理完自动保存并继续）</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
-              <div class="switch-row"><span>覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
-              <div class="switch-row"><span>处理后自动导出 TXT</span><label class="switch"><input id="d-autoexport" type="checkbox"><span></span></label></div>
-              <div class="field-row">
-                <label>特殊起始字符</label>
-                <input id="d-special" type="text" placeholder="如「☆、※」，命中的行按特殊行处理" />
-              </div>
-              <div class="field-row">
-                <label>手动过滤</label>
-                <input id="d-filter" type="text" placeholder="剔除包含这些字符的整行，多个字符用空格分隔" />
-              </div>
-              <div class="field-row" id="d-filter-len-row" style="display:none;">
-                <label>过滤行长度</label>
-                <input id="d-filter-len" type="number" min="0" placeholder="只过滤不超过该长度的行（0 = 不限制）" />
-              </div>
+              <div class="divider"></div>
+              <div class="group-title">高级配置</div>
+              <div class="switch-row"><span>清除行尾数字</span><label class="switch"><input type="checkbox" data-opt="enableLineEndNumbers"><span></span></label></div>
               <div class="field-row">
                 <label>自动识别作者</label>
                 <div style="display:flex;align-items:center;gap:10px;">
@@ -341,18 +330,35 @@
               <div class="field-row">
                 <label>繁简转换</label>
                 <div class="seg" id="d-convert">
-                  <button type="button" class="seg-btn active" data-val="none">不转换</button>
-                  <button type="button" class="seg-btn" data-val="t2s">繁 → 简</button>
-                  <button type="button" class="seg-btn" data-val="s2t">简 → 繁</button>
+                  <button type="button" class="seg-btn active" data-val="none">不变</button>
+                  <button type="button" class="seg-btn" data-val="t2s">繁 ➔ 简</button>
+                  <button type="button" class="seg-btn" data-val="s2t">简 ➔ 繁</button>
                 </div>
               </div>
+              <div class="field-row">
+                <label>特殊起始字符</label>
+                <input id="d-special" type="text" placeholder="命中的行按特殊行处理，如 ☆、※" />
+              </div>
+              <div class="field-row">
+                <label>手动过滤</label>
+                <input id="d-filter" type="text" placeholder="剔除包含这些字符的整行，多个字符用空格分隔" />
+              </div>
+              <div class="field-row" id="d-filter-len-row" style="display:none;">
+                <label>过滤行长度</label>
+                <input id="d-filter-len" type="number" min="0" placeholder="只过滤不超过该长度的行（0 = 不限制）" />
+              </div>
+              <div class="divider"></div>
+              <div class="switch-row"><span>自动导出</span><label class="switch"><input id="d-autoexport" type="checkbox"><span></span></label></div>
+              <div class="switch-row"><span>自动覆盖</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
+              <div class="switch-row"><span>覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
             </div>
           </div>
 
+          <div class="rules-title">忽略规则</div>
           <ul class="rules">
-            <li>勾选状态跨页保留，批量请求按 id 去重。</li>
-            <li>每本之间停 200ms，每 10 本额外停 800ms，给浏览器回收大字符串。</li>
-            <li>覆盖沿用主程序接口，按原文件编码写回；「精校」标签只追加，不清空原有标签。</li>
+            <li>已带「精校」标签的书籍会自动跳过（如需重新校正，请先移除该标签）</li>
+            <li>没有 TXT 格式的书籍会自动跳过</li>
+            <li>只有「覆盖」成功后才会添加「精校」标签；仅跳过或不覆盖时不会添加</li>
           </ul>
           <div class="log" id="d-log"></div>
         </div>
@@ -672,6 +678,11 @@
       btn.classList.add('active');
     });
   });
+  function syncIndentRow() {
+    $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none';
+  }
+  $('d-smart').addEventListener('change', syncIndentRow);
+  syncIndentRow();
   $('d-copy').addEventListener('click', copyResult);
   $('d-export').addEventListener('click', exportFile);
   $('d-filter').addEventListener('input', function () {
