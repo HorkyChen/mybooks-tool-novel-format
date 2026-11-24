@@ -701,13 +701,12 @@
 
   // 旧版服务端会把 GBK 的 TXT 按 UTF-8 解码成乱码；这里改为下载原始字节，
   // 在浏览器里按 BOM / UTF-8 严格校验 / 常用字命中率判断编码后解码。
-  var COMMON_HANZI = '的一是了我不人在他有这个上们来到时大地为子中你说生国年着就那和要她出也得里后自以会家可下而过天去能对小多然于心学么之都好看起发当没成只如事把还用第样道想作种开美总从无情己面最女但现前些所同日手又行意动方期它头经长儿回位分爱老因很给名法间斯知世什两次使身者被高已亲其进此话常与活正感';
+  var COMMON_HANZI = '的一是了我不人在他有这个上们来到时大地为子中你说生国年着就那和要她出也得里后自以会家可下而过天去能对小多然于心学么之都好看起发当没成只如事把还用第样道想作种开美总从无情己面最女但现前些所同日手又行意动方期它头经长儿回位分爱老因很给名法间斯知世什两次使身者被高已亲其进此话常与活正感' +
+    '的一是了我不人在他有這個上們來到時大地為子中你說生國年著就那和要她出也得裡後自以會家可下而過天去能對小多然於心學麼之都好看起發當沒成只如事把還用第樣道想作種開美總從無情己面最女但現前些所同日手又行意動方期它頭經長兒回位分愛老因很給名法間斯知世什兩次使身者被高已親其進此話常與活正感';
 
   function scoreCandidates(text) {
-    var hits = 0;
-    for (var i = 0; i < COMMON_HANZI.length; i++) {
-      if (text.indexOf(COMMON_HANZI[i]) !== -1) hits++;
-    }
+    // 按出现次数统计，而不是"是否出现"：短句反复出现时只看存在性会误判成乱码
+    var hits = (text.match(new RegExp('[' + COMMON_HANZI + ']', 'g')) || []).length;
     var bad = (text.match(/\uFFFD/g) || []).length;
     return hits - bad * 5;
   }
@@ -756,8 +755,17 @@
     return { text: new TextDecoder(chosen).decode(u8), encoding: chosen };
   }
 
-  function fetchSourceText(book) {
-    // 优先拿原始文件字节（旧版接口也存在），失败再退回排版接口
+  function looksGarbled(text) {
+    var sample = String(text || '').slice(0, 20000);
+    if (sample.length < 200) return false;
+    var cjk = (sample.match(/[\u4e00-\u9fff]/g) || []).length;
+    if (cjk < 20) return false;   // 基本没有中文，无法判断，按正常处理
+    var bad = (sample.match(/\uFFFD/g) || []).length;
+    if (bad / sample.length > 0.002) return true;   // 0.2% 以上是替换字符
+    return scoreCandidates(sample) < 20;            // 中文里常用字命中极低 = 乱码
+  }
+
+  function fetchRawSource(book) {
     return fetch('/api/book/' + book.id + '.TXT', { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) throw new Error('download-failed');
@@ -769,15 +777,27 @@
         var decoded = decodeNovelBytes(buf);
         decoded.size = buf.byteLength;
         return decoded;
+      });
+  }
+
+  function fetchSourceText(book) {
+    // 正常路径：走服务端解码好的 JSON；只有识别到乱码（或读取失败）才去下载原始字节
+    return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (rsp) {
+        if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
+        var data = rsp.data || {};
+        var text = data.content || '';
+        if (looksGarbled(text)) {
+          var err = new Error('garbled');
+          err.code = 'garbled';
+          throw err;
+        }
+        return { text: text, encoding: data.encoding || 'utf-8', size: data.size || 0 };
       })
       .catch(function (err) {
         if (err && err.code === 'decode_failed') throw err;
-        return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
-          .then(function (r) { return r.json(); })
-          .then(function (rsp) {
-            if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
-            return { text: rsp.data.content || '', encoding: rsp.data.encoding || 'utf-8', size: rsp.data.size || 0 };
-          });
+        return fetchRawSource(book);
       });
   }
 
