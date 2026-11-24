@@ -17,7 +17,7 @@ class NovelFormat(BaseTool):
             "tool_id": TOOL_ID,
             "name": "小说排版整理",
             "description": "批量把 TXT 小说按段落/章节重新排版并覆盖回书库，可选追加「精校」标签",
-            "revision": "0.2.3",
+            "revision": "0.2.4",
             "author": "unlimited996",
             "repo_url": "https://github.com/unlimited996/mybooks-tool-novel-format",
         } 

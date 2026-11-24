@@ -1,4 +1,8 @@
 {
   "default": "zh",
-  "locales": ["zh", "en"]
+  "locales": [
+    "zh",
+    "zh-TW",
+    "en"
+  ]
 }

@@ -47,8 +47,18 @@
     }
 
     function resolveLocale(locale) {
-      if (availableLocales.indexOf(locale) !== -1) return locale;
-      var base = String(locale || '').split('-')[0];
+      var raw = String(locale || '');
+      if (availableLocales.indexOf(raw) !== -1) return raw;
+      // 宿主可能给 zh-CN / zh-Hans / zh-Hant / en-US 这类带地区的写法，
+      // 先做一次别名映射，再退回主语言。
+      var key = raw.toLowerCase();
+      var alias = {
+        'zh-cn': 'zh', 'zh-hans': 'zh', 'zh-sg': 'zh',
+        'zh-tw': 'zh-TW', 'zh-hk': 'zh-TW', 'zh-hant': 'zh-TW',
+        'en-us': 'en', 'en-gb': 'en', 'en-au': 'en'
+      };
+      if (alias[key] && availableLocales.indexOf(alias[key]) !== -1) return alias[key];
+      var base = key.split('-')[0];
       if (availableLocales.indexOf(base) !== -1) return base;
       return defaultLocale;
     }

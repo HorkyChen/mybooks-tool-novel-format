@@ -190,24 +190,24 @@
 </head>
 <body>
 <div class="page">
-  <h1>小说排版整理</h1>
-  <p class="sub">勾选书籍后开始，逐本排版并覆盖回书库。正文只在「打开弹窗」时读取当前一本，处理完即释放。</p>
+  <h1 data-i18n="app.title">小说排版整理</h1>
+  <p class="sub" data-i18n="app.sub">勾选书籍后开始，逐本排版并覆盖回书库。</p>
 
   <div class="toolbar">
     <div class="search">
-      <input id="q" placeholder="搜索书名 / 作者 / 标签，支持 calibre 语法（如 tags:小说）" />
-      <button id="search-btn" class="btn">搜索</button>
+      <input id="q" data-i18n-attr="placeholder:search.placeholder" placeholder="搜索书名 / 作者 / 标签" />
+      <button id="search-btn" class="btn" data-i18n="search.button">搜索</button>
     </div>
-    <button id="start-btn" class="btn btn--primary" disabled>开始排版</button>
+    <button id="start-btn" class="btn btn--primary" data-i18n="action.start" disabled>开始排版</button>
   </div>
 
   <div class="selection-bar">
     <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
       <input id="check-page" type="checkbox" style="width:16px;height:16px;accent-color:var(--mb-color-primary);" />
-      <span>全选本页</span>
+      <span data-i18n="sel.allPage">全选本页</span>
     </label>
-    <span id="sel-count" class="chip">已选 0 本（跨页）</span>
-    <button id="clear-sel" class="btn btn--sm btn--text">清空</button>
+    <span id="sel-count" class="chip"></span>
+    <button id="clear-sel" class="btn btn--sm btn--text" data-i18n="sel.clear">清空</button>
     <span class="grow"></span>
     <span id="total-text"></span>
   </div>
@@ -217,27 +217,30 @@
       <table>
         <thead>
           <tr>
-            <th style="width:42px;"></th><th style="width:56px;">封面</th><th style="width:76px;">ID</th>
-            <th>书名</th><th style="width:150px;">作者</th><th style="width:200px;">标签</th><th style="width:110px;">格式</th>
+            <th style="width:42px;"></th>
+            <th style="width:56px;" data-i18n="table.cover">封面</th>
+            <th style="width:76px;" data-i18n="table.id">ID</th>
+            <th data-i18n="table.title">书名</th>
+            <th style="width:150px;" data-i18n="table.author">作者</th>
+            <th style="width:200px;" data-i18n="table.tags">标签</th>
+            <th style="width:110px;" data-i18n="table.formats">格式</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
-      <div id="empty" class="empty" style="display:none;">没有匹配的书籍</div>
+      <div id="empty" class="empty" style="display:none;" data-i18n="list.empty">没有匹配的书籍</div>
     </div>
     <div class="table-foot">
       <div class="table-foot__info" id="foot-info"></div>
       <div class="pager">
-        <button id="prev" class="btn btn--sm">上一页</button>
+        <button id="prev" class="btn btn--sm" data-i18n="pager.prev">上一页</button>
         <span id="page-info" class="muted">1 / 1</span>
-        <button id="next" class="btn btn--sm">下一页</button>
-        <span class="muted">每页</span>
-        <select id="page-size">
-          <option>20</option><option selected>50</option><option>100</option><option>200</option>
-        </select>
-        <span class="muted">跳至</span>
+        <button id="next" class="btn btn--sm" data-i18n="pager.next">下一页</button>
+        <span class="muted" data-i18n="pager.perPage">每页</span>
+        <select id="page-size"><option>20</option><option selected>50</option><option>100</option><option>200</option></select>
+        <span class="muted" data-i18n="pager.jumpTo">跳至</span>
         <input id="jump" type="number" min="1" value="1" />
-        <span class="muted">页</span>
+        <span class="muted" data-i18n="pager.pageUnit">页</span>
       </div>
     </div>
   </div>
@@ -247,18 +250,18 @@
 <div id="dialog" class="dialog">
   <div class="dlg-head">
     <div class="dlg-title-row">
-      <h2 class="dlg-title">小说排版整理</h2>
+      <h2 class="dlg-title" data-i18n="dlg.title">小说排版整理</h2>
       <span class="grow"></span>
-      <button id="dlg-close" class="dlg-close" title="关闭">×</button>
+      <button id="dlg-close" class="dlg-close" data-i18n-attr="title:dlg.close">×</button>
     </div>
     <div class="dlg-meta">
-      <span id="dlg-progress-text">第 1/1 本</span>
-      <span id="dlg-covered" class="chip">已覆盖 0</span>
-      <span id="dlg-skipped" class="chip chip--warn">跳过 0</span>
+      <span id="dlg-progress-text"></span>
+      <span id="dlg-covered" class="chip"></span>
+      <span id="dlg-skipped" class="chip chip--warn"></span>
       <div class="progress"><i id="dlg-bar"></i></div>
       <span id="dlg-percent">0%</span>
       <span class="grow"></span>
-      <button id="dlg-skip" class="btn btn--sm">跳过本书</button>
+      <button id="dlg-skip" class="btn btn--sm" data-i18n="dlg.skipBook">跳过本书</button>
     </div>
   </div>
 
@@ -268,7 +271,7 @@
         <div>
           <div class="panel">
             <div class="panel-title">
-              <span>当前书籍原文</span>
+              <span data-i18n="panel.source">当前书籍原文</span>
               <span class="grow"></span>
               <span class="badge" id="d-src-enc">utf-8</span>
               <span class="badge" id="d-src-size">0 KB</span>
@@ -280,18 +283,18 @@
           </div>
 
           <div class="process-row">
-            <button id="d-process" class="btn btn--primary btn--block">开始处理</button>
-            <button id="d-split" class="btn" title="章节分割">章节分割</button>
-            <button id="d-reorder" class="btn" title="章节重排">章节重排</button>
+            <button id="d-process" class="btn btn--primary btn--block" data-i18n="action.process">开始处理</button>
+            <button id="d-split" class="btn" data-i18n="action.splitChapters">章节分割</button>
+            <button id="d-reorder" class="btn" data-i18n="action.reorderChapters">章节重排</button>
           </div>
 
           <div class="panel">
             <div class="panel-title">
-              <span>已校正文本</span>
+              <span data-i18n="panel.result">已校正文本</span>
               <span class="grow"></span>
-              <button id="d-copy" class="btn btn--sm btn--text">复制</button>
-              <button id="d-export" class="btn btn--sm btn--text">导出</button>
-              <span class="badge">只读预览</span>
+              <button id="d-copy" class="btn btn--sm btn--text" data-i18n="action.copy">复制</button>
+              <button id="d-export" class="btn btn--sm btn--text" data-i18n="action.export">导出</button>
+              <span class="badge" data-i18n="badge.readonly">只读预览</span>
             </div>
             <div class="panel-body">
               <textarea id="d-out" rows="10" readonly></textarea>
@@ -303,62 +306,62 @@
 
         <div>
           <div class="panel">
-            <div class="panel-title">配置选项</div>
+            <div class="panel-title" data-i18n="config.title">配置选项</div>
             <div class="panel-body">
-              <div class="group-title">段落排版</div>
-              <div class="switch-row"><span>智能换行</span><label class="switch"><input id="d-smart" type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
-              <div class="switch-row" id="d-indent-row"><span>段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
-              <div class="switch-row"><span>长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit" checked><span></span></label></div>
-              <div class="switch-row"><span>清理首尾空格</span><label class="switch"><input type="checkbox" data-opt="enableTrim" checked><span></span></label></div>
+              <div class="group-title" data-i18n="group.layout">段落排版</div>
+              <div class="switch-row"><span data-i18n="opt.smartLineBreak">智能换行</span><label class="switch"><input id="d-smart" type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
+              <div class="switch-row" id="d-indent-row"><span data-i18n="opt.indent">段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.paragraphSplit">长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.trim">清理首尾空格</span><label class="switch"><input type="checkbox" data-opt="enableTrim" checked><span></span></label></div>
 
               <div class="divider"></div>
-              <div class="group-title">章节处理</div>
-              <div class="switch-row"><span>章节标题分行</span><label class="switch"><input type="checkbox" data-opt="enableChapterSplit" checked><span></span></label></div>
-              <div class="switch-row"><span>合并重复章节标题</span><label class="switch"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked><span></span></label></div>
-              <div class="switch-row"><span>去除重复行</span><label class="switch"><input type="checkbox" data-opt="removeDuplicateLines" checked><span></span></label></div>
+              <div class="group-title" data-i18n="group.chapter">章节处理</div>
+              <div class="switch-row"><span data-i18n="opt.chapterSplit">章节标题分行</span><label class="switch"><input type="checkbox" data-opt="enableChapterSplit" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.mergeTitles">合并重复章节标题</span><label class="switch"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.dedupe">去除重复行</span><label class="switch"><input type="checkbox" data-opt="removeDuplicateLines" checked><span></span></label></div>
 
               <div class="divider"></div>
-              <div class="group-title">高级配置</div>
-              <div class="switch-row"><span>清除行尾数字</span><label class="switch"><input type="checkbox" data-opt="enableLineEndNumbers"><span></span></label></div>
+              <div class="group-title" data-i18n="group.advanced">高级配置</div>
+              <div class="switch-row"><span data-i18n="opt.lineEndNumbers">清除行尾数字</span><label class="switch"><input type="checkbox" data-opt="enableLineEndNumbers"><span></span></label></div>
               <div class="field-row">
-                <label>自动识别作者</label>
+                <label data-i18n="opt.autoAuthor">自动识别作者</label>
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <input id="d-author" type="text" readonly placeholder="未识别到作者" />
-                  <label class="switch" title="覆盖时写入作者"><input id="d-author-on" type="checkbox"><span></span></label>
+                  <input id="d-author" type="text" readonly data-i18n-attr="placeholder:opt.authorUnknown" placeholder="未识别到作者" />
+                  <label class="switch" data-i18n-attr="title:opt.authorWrite"><input id="d-author-on" type="checkbox"><span></span></label>
                 </div>
               </div>
               <div class="field-row">
-                <label>繁简转换</label>
+                <label data-i18n="opt.conversion">繁简转换</label>
                 <div class="seg" id="d-convert">
-                  <button type="button" class="seg-btn active" data-val="none">不变</button>
-                  <button type="button" class="seg-btn" data-val="t2s">繁 ➔ 简</button>
-                  <button type="button" class="seg-btn" data-val="s2t">简 ➔ 繁</button>
+                  <button type="button" class="seg-btn active" data-val="none" data-i18n="conv.none">不变</button>
+                  <button type="button" class="seg-btn" data-val="t2s" data-i18n="conv.t2s">繁 ➔ 简</button>
+                  <button type="button" class="seg-btn" data-val="s2t" data-i18n="conv.s2t">简 ➔ 繁</button>
                 </div>
               </div>
               <div class="field-row">
-                <label>特殊起始字符</label>
-                <input id="d-special" type="text" placeholder="命中的行按特殊行处理，如 ☆、※" />
+                <label data-i18n="opt.specialStart">特殊起始字符</label>
+                <input id="d-special" type="text" data-i18n-attr="placeholder:opt.specialStartPh" placeholder="命中的行按特殊行处理" />
               </div>
               <div class="field-row">
-                <label>手动过滤</label>
-                <input id="d-filter" type="text" placeholder="剔除包含这些字符的整行，多个字符用空格分隔" />
+                <label data-i18n="opt.filter">手动过滤</label>
+                <input id="d-filter" type="text" data-i18n-attr="placeholder:opt.filterPh" placeholder="剔除包含这些字符的整行" />
               </div>
               <div class="field-row" id="d-filter-len-row" style="display:none;">
-                <label>过滤行长度</label>
-                <input id="d-filter-len" type="number" min="0" placeholder="只过滤不超过该长度的行（0 = 不限制）" />
+                <label data-i18n="opt.filterLen">过滤行长度</label>
+                <input id="d-filter-len" type="number" min="0" data-i18n-attr="placeholder:opt.filterLenPh" placeholder="只过滤不超过该长度的行" />
               </div>
               <div class="divider"></div>
-              <div class="switch-row"><span>自动导出</span><label class="switch"><input id="d-autoexport" type="checkbox"><span></span></label></div>
-              <div class="switch-row"><span>自动覆盖</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
-              <div class="switch-row"><span>覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.autoExport">自动导出</span><label class="switch"><input id="d-autoexport" type="checkbox"><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.autoCover">自动覆盖</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.tag">覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
             </div>
           </div>
 
-          <div class="rules-title">忽略规则</div>
+          <div class="rules-title" data-i18n="rules.title">忽略规则</div>
           <ul class="rules">
-            <li>已带「精校」标签的书籍会自动跳过（如需重新校正，请先移除该标签）</li>
-            <li>没有 TXT 格式的书籍会自动跳过</li>
-            <li>只有「覆盖」成功后才会添加「精校」标签；仅跳过或不覆盖时不会添加</li>
+            <li data-i18n="rules.tagged">已带「精校」标签的书籍会自动跳过（如需重新校正，请先移除该标签）</li>
+            <li data-i18n="rules.noTxt">没有 TXT 格式的书籍会自动跳过</li>
+            <li data-i18n="rules.tagAfter">只有「覆盖」成功后才会添加「精校」标签；仅跳过或不覆盖时不会添加</li>
           </ul>
           <div class="log" id="d-log"></div>
         </div>
@@ -366,75 +369,62 @@
     </div>
 
     <div id="dlg-done" class="done" style="display:none;">
-      <h2>本批次已处理完毕</h2>
+      <h2 data-i18n="done.title">本批次已处理完毕</h2>
       <p id="done-summary"></p>
-      <button id="done-close" class="btn btn--primary">关闭</button>
+      <button id="done-close" class="btn btn--primary" data-i18n="action.close">关闭</button>
     </div>
   </div>
   <div class="dlg-foot">
     <span class="grow"></span>
-    <button id="d-cover" class="btn">覆盖</button>
-    <button id="d-finish" class="btn btn--primary">完成 ›</button>
+    <button id="d-cover" class="btn" data-i18n="action.cover">覆盖</button>
+    <button id="d-finish" class="btn btn--primary" data-i18n="action.complete">完成 ›</button>
   </div>
 </div>
 
 <script src="/static/toolbox-bridge.js"></script>
 <script src="lib/novel.js"></script>
+<script src="lib/i18n.js"></script>
 <script>
 (function () {
   'use strict';
   var API = '/api/novel_format';
   var DISPLAY_LIMIT = 50000;
-
+  var i18n = window.MyBooksToolI18n.create();
+  var t = function (k, p) { return i18n.t(k, p); };
   var state = { page: 1, num: 50, total: 0, search: '', items: [], selected: new Map(), running: false };
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-  /* ---------- 主题：跟随宿主明暗 + 主色 ---------- */
   function applyTheme() {
     var bridge = window.MyBooksToolBridge || {};
-    var dark = bridge.theme === 'dark';
-    document.body.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.body.setAttribute('data-theme', bridge.theme === 'dark' ? 'dark' : 'light');
     var primary = null;
     try {
-      primary = getComputedStyle(window.parent.document.documentElement)
-        .getPropertyValue('--primary-color').trim();
+      primary = getComputedStyle(window.parent.document.documentElement).getPropertyValue('--primary-color').trim();
     } catch (e) { primary = null; }
     if (!primary) {
-      try {
-        var s = JSON.parse(localStorage.getItem('appearance_settings') || '{}');
-        primary = s.accent || s.brandColor || null;
-      } catch (e) { primary = null; }
+      try { var s = JSON.parse(localStorage.getItem('appearance_settings') || '{}'); primary = s.accent || s.brandColor || null; } catch (e) {}
     }
     if (primary) {
       document.documentElement.style.setProperty('--mb-color-primary', primary);
       var rgb = primary.replace('#', '');
       var r = parseInt(rgb.substr(0, 2), 16), g = parseInt(rgb.substr(2, 2), 16), b = parseInt(rgb.substr(4, 2), 16);
-      var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      document.documentElement.style.setProperty('--btn-primary-fg', lum > 0.65 ? '#111' : '#fff');
+      document.documentElement.style.setProperty('--btn-primary-fg', (0.299*r + 0.587*g + 0.114*b) / 255 > 0.65 ? '#111' : '#fff');
     }
   }
-  if (window.MyBooksToolBridge && window.MyBooksToolBridge.onThemeChange) {
-    window.MyBooksToolBridge.onThemeChange(applyTheme);
-  }
+  if (window.MyBooksToolBridge && window.MyBooksToolBridge.onThemeChange) window.MyBooksToolBridge.onThemeChange(applyTheme);
   applyTheme();
 
-  /* ---------- 列表 ---------- */
   function loadBooks() {
     var q = new URLSearchParams();
     q.set('page', state.page); q.set('num', state.num); q.set('sort', 'id'); q.set('desc', 'true');
     if (state.search) q.set('search', state.search);
-    $('tbody').innerHTML = '<tr><td colspan="7" class="empty">加载中…</td></tr>';
+    $('tbody').innerHTML = '<tr><td colspan="7" class="empty">' + esc(t('list.loading')) + '</td></tr>';
     fetch('/api/admin/book/list?' + q.toString(), { credentials: 'include' })
       .then(function (r) { return r.json(); })
-      .then(function (rsp) {
-        if (rsp.err !== 'ok') throw new Error(rsp.msg || '加载失败');
-        state.items = rsp.items || []; state.total = rsp.total || 0; render();
-      })
-      .catch(function (err) {
-        $('tbody').innerHTML = '<tr><td colspan="7" class="empty">' + esc(err.message) + '</td></tr>';
-      });
+      .then(function (rsp) { if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error'); state.items = rsp.items || []; state.total = rsp.total || 0; render(); })
+      .catch(function (err) { $('tbody').innerHTML = '<tr><td colspan="7" class="empty">' + esc(t('err.load', { msg: err.message || err })) + '</td></tr>'; });
   }
 
   function render() {
@@ -443,10 +433,9 @@
     state.items.forEach(function (b) {
       var tr = document.createElement('tr');
       if (state.selected.has(b.id)) tr.className = 'is-selected';
-      var tags = (b.tags || []).slice(0, 6).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('');
+      var tags = (b.tags || []).slice(0, 6).map(function (x) { return '<span class="tag">' + esc(x) + '</span>'; }).join('');
       var formats = (b.files || []).map(function (f) { return f.format; }).join(', ');
-      tr.innerHTML =
-        '<td><input type="checkbox" data-id="' + b.id + '" ' + (state.selected.has(b.id) ? 'checked' : '') + '></td>' +
+      tr.innerHTML = '<td><input type="checkbox" data-id="' + b.id + '" ' + (state.selected.has(b.id) ? 'checked' : '') + '></td>' +
         '<td><img class="cover" loading="lazy" src="/get/thumb_240_320/' + b.id + '.jpg" alt="" onerror="this.style.visibility=\'hidden\'"></td>' +
         '<td>' + b.id + '</td><td>' + esc(b.title) + '</td><td>' + esc(b.author) + '</td><td>' + tags + '</td><td>' + esc(formats) + '</td>';
       tb.appendChild(tr);
@@ -454,92 +443,68 @@
     tb.querySelectorAll('input[data-id]').forEach(function (cb) {
       cb.addEventListener('change', function () {
         var id = Number(cb.getAttribute('data-id'));
-        if (cb.checked) {
-          var book = state.items.find(function (x) { return x.id === id; });
-          state.selected.set(id, { id: id, title: book ? book.title : String(id) });
-        } else { state.selected.delete(id); }
+        if (cb.checked) { var bk = state.items.find(function (x) { return x.id === id; }); state.selected.set(id, { id: id, title: bk ? bk.title : String(id) }); }
+        else state.selected.delete(id);
         cb.closest('tr').classList.toggle('is-selected', cb.checked);
         renderSel();
       });
     });
     var pages = Math.max(1, Math.ceil(state.total / state.num));
     $('page-info').textContent = state.page + ' / ' + pages;
-    $('total-text').textContent = '共 ' + state.total + ' 本';
-    $('foot-info').textContent = '第 ' + state.page + ' 页，共 ' + pages + ' 页 · 全库 ' + state.total + ' 本';
+    $('total-text').textContent = t('list.total', { total: state.total });
+    $('foot-info').textContent = t('foot.info', { page: state.page, pages: pages, total: state.total });
     $('jump').value = state.page;
     renderSel();
   }
 
   function renderSel() {
-    $('sel-count').textContent = '已选 ' + state.selected.size + ' 本（跨页）';
+    $('sel-count').textContent = t('sel.count', { count: state.selected.size });
     $('start-btn').disabled = state.running || state.selected.size === 0;
   }
 
-  /* ---------- 弹窗 ---------- */
-  var dlg = { books: [], index: 0, source: '', result: '', encoding: 'utf-8', size: 0,
-    covered: [], skipped: [], processing: false, auto: false, author: '', logs: [] };
+  var dlg = { books: [], index: 0, source: '', result: '', encoding: 'utf-8', size: 0, covered: [], skipped: [], author: '', logs: [] };
+  function currentBook() { return dlg.books[dlg.index]; }
+  function log(msg) { dlg.logs.push(new Date().toTimeString().slice(0, 8) + ' ' + msg); $('d-log').textContent = dlg.logs.slice(-80).join('\n'); $('d-log').scrollTop = $('d-log').scrollHeight; }
 
   function openDialog() {
     dlg.books = Array.from(state.selected.values());
     dlg.index = 0; dlg.covered = []; dlg.skipped = []; dlg.logs = [];
-    dlg.auto = $('d-auto').checked;
-    $('dlg-done').style.display = 'none';
-    $('dlg-main').style.display = 'block';
-    $('overlay').classList.add('open');
-    $('dialog').classList.add('open');
+    $('dlg-done').style.display = 'none'; $('dlg-main').style.display = 'block';
+    $('overlay').classList.add('open'); $('dialog').classList.add('open');
     loadCurrent();
   }
-  function closeDialog() {
-    $('overlay').classList.remove('open');
-    $('dialog').classList.remove('open');
-    state.running = false; renderSel();
-  }
+  function closeDialog() { $('overlay').classList.remove('open'); $('dialog').classList.remove('open'); state.running = false; renderSel(); }
   function updateHead() {
     var total = dlg.books.length || 1;
-    $('dlg-progress-text').textContent = '第 ' + Math.min(dlg.index + 1, total) + '/' + total + ' 本';
-    $('dlg-covered').textContent = '已覆盖 ' + dlg.covered.length;
-    $('dlg-skipped').textContent = '跳过 ' + dlg.skipped.length;
+    $('dlg-progress-text').textContent = t('dlg.progress', { index: Math.min(dlg.index + 1, total), total: total });
+    $('dlg-covered').textContent = t('dlg.covered', { count: dlg.covered.length });
+    $('dlg-skipped').textContent = t('dlg.skipped', { count: dlg.skipped.length });
     var pct = Math.round(dlg.index * 100 / total);
-    $('dlg-percent').textContent = pct + '%';
-    $('dlg-bar').style.width = pct + '%';
+    $('dlg-percent').textContent = pct + '%'; $('dlg-bar').style.width = pct + '%';
   }
-  function log(msg) {
-    dlg.logs.push(new Date().toTimeString().slice(0, 8) + ' ' + msg);
-    $('d-log').textContent = dlg.logs.slice(-80).join('\n');
-    $('d-log').scrollTop = $('d-log').scrollHeight;
-  }
-  function currentBook() { return dlg.books[dlg.index]; }
 
   function loadCurrent() {
-    var book = currentBook();
-    if (!book) return finish();
+    var book = currentBook(); if (!book) return finish();
     updateHead();
     $('d-src').value = ''; $('d-out').value = '';
     $('d-src-stats').textContent = ''; $('d-out-stats').textContent = ''; $('d-out-hint').textContent = '';
     $('d-author').value = ''; dlg.author = '';
-    $('d-src-enc').textContent = '…'; $('d-src-size').textContent = '…';
     return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (rsp) {
-        if (rsp.err !== 'ok') throw new Error(rsp.msg || '读取失败');
+        if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
         var data = rsp.data;
-        dlg.source = data.content || '';
-        dlg.encoding = data.encoding || 'utf-8';
-        dlg.size = data.size || 0;
+        dlg.source = data.content || ''; dlg.encoding = data.encoding || 'utf-8'; dlg.size = data.size || 0;
         $('d-src').value = dlg.source.slice(0, DISPLAY_LIMIT);
         $('d-src-enc').textContent = dlg.encoding;
-        $('d-src-size').textContent = Math.round(dlg.size / 1024) + ' KB';
-        $('d-src-stats').textContent = '字符 ' + dlg.source.length.toLocaleString() +
-          (dlg.source.length > DISPLAY_LIMIT ? '（仅预览前 5 万字）' : '');
+        $('d-src-size').textContent = t('stats.kb', { size: Math.round(dlg.size / 1024) });
+        $('d-src-stats').textContent = t('stats.chars', { count: dlg.source.length.toLocaleString() }) +
+          (dlg.source.length > DISPLAY_LIMIT ? ' ' + t('stats.previewLimit') : '');
         try { dlg.author = window.NovelFmt.detectAuthor(dlg.source, book.title) || ''; } catch (e) { dlg.author = ''; }
         $('d-author').value = dlg.author;
-        if (dlg.auto) process();
+        if ($('d-auto').checked) process();
       })
-      .catch(function (err) {
-        log('读取失败：' + (err.message || err));
-        dlg.skipped.push(book.id);
-        if (dlg.auto) advance();
-      });
+      .catch(function (err) { log(t('log.readFailed', { msg: err.message || err })); dlg.skipped.push(book.id); if ($('d-auto').checked) advance(); });
   }
 
   function options() {
@@ -553,80 +518,50 @@
 
   function process() {
     if (!dlg.source) return;
-    dlg.processing = true; $('d-process').disabled = true;
+    $('d-process').disabled = true;
     var mode = document.querySelector('#d-convert .seg-btn.active').getAttribute('data-val');
     var text = dlg.source;
     var pre = mode === 'none' ? Promise.resolve(text) :
-      fetch(API + '/convert', { method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      fetch(API + '/convert', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text, direction: mode }) })
-        .then(function (r) { return r.json(); })
-        .then(function (rsp) { if (rsp.err !== 'ok') throw new Error(rsp.msg || '转换失败'); return rsp.data.text; });
-    return pre.then(function (t) { return window.NovelFmt.formatNovelText(t, options()); })
+      .then(function (r) { return r.json(); })
+      .then(function (rsp) { if (rsp.err !== 'ok') throw new Error(rsp.msg || t('err.convert', { msg: '' })); return rsp.data.text; });
+    return pre.then(function (x) { return window.NovelFmt.formatNovelText(x, options()); })
       .then(function (out) {
         dlg.result = out;
         $('d-out').value = out.slice(0, DISPLAY_LIMIT);
-        $('d-out-stats').textContent = '字符 ' + out.length.toLocaleString() + ' · 行 ' + out.split('\n').length.toLocaleString();
-        $('d-out-hint').textContent = out.length > DISPLAY_LIMIT ? '全文 ' + out.length.toLocaleString() + ' 字，此处仅预览前 5 万字；覆盖仍使用完整内容' : '';
-        log((currentBook().title || '') + ' 排版完成');
+        $('d-out-stats').textContent = t('stats.chars', { count: out.length.toLocaleString() }) + ' · ' + t('stats.lines', { count: out.split('\n').length.toLocaleString() });
+        $('d-out-hint').textContent = out.length > DISPLAY_LIMIT ? t('stats.fullPreview', { total: out.length.toLocaleString() }) : '';
+        log(t('log.processed', { title: currentBook().title || '' }));
         if ($('d-autoexport').checked) exportFile();
-        if (dlg.auto) return cover(true);
+        if ($('d-auto').checked) return cover(true);
       })
-      .catch(function (err) { log('排版失败：' + (err.message || err)); })
-      .finally(function () { dlg.processing = false; $('d-process').disabled = false; });
+      .catch(function (err) { log(t('log.processFailed', { msg: err.message || err })); })
+      .finally(function () { $('d-process').disabled = false; });
   }
 
   function cover(auto) {
-    var book = currentBook();
-    if (!book || !dlg.result) return Promise.resolve(false);
+    var book = currentBook(); if (!book || !dlg.result) return Promise.resolve(false);
     $('d-cover').disabled = true;
     var author = $('d-author-on').checked ? (dlg.author || '') : '';
-    return fetch(API + '/' + book.id + '/save', {
-      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: dlg.result, encoding: dlg.encoding, author: author }),
-    }).then(function (r) { return r.json(); }).then(function (rsp) {
-      if (rsp.err !== 'ok') throw new Error(rsp.msg || '覆盖失败');
-      if (dlg.covered.indexOf(book.id) === -1) dlg.covered.push(book.id);
-      log((book.title || '') + ' 已覆盖');
-      updateHead();
-      if (auto) return advance();
-      return true;
-    }).catch(function (err) {
-      log('覆盖失败：' + (err.message || err));
-      if (auto) return advance();
-      return false;
-    }).finally(function () { $('d-cover').disabled = false; });
-  }
-
-  function copyResult() {
-    if (!dlg.result) return;
-    var text = dlg.result;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { log('已复制全文'); });
-    } else {
-      var ta = document.createElement('textarea');
-      ta.value = text; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-      log('已复制全文');
-    }
-  }
-
-  function exportFile() {
-    if (!dlg.result) return;
-    var book = currentBook() || {};
-    var name = (book.title || ('book_' + (book.id || ''))).replace(/[\\/:*?"<>|]/g, '_');
-    var blob = new Blob([dlg.result], { type: 'text/plain;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = name + '.txt';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-    log('已导出 ' + name + '.txt');
+    return fetch(API + '/' + book.id + '/save', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: dlg.result, encoding: dlg.encoding, author: author }) })
+      .then(function (r) { return r.json(); })
+      .then(function (rsp) {
+        if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
+        if (dlg.covered.indexOf(book.id) === -1) dlg.covered.push(book.id);
+        if (rsp.data && rsp.data.tagged === false) log(t('log.tagMissing'));
+        log(t('log.covered', { title: book.title || '' }));
+        updateHead();
+        if (auto) return advance();
+        return true;
+      })
+      .catch(function (err) { log(t('log.coverFailed', { msg: err.message || err })); if (auto) return advance(); return false; })
+      .finally(function () { $('d-cover').disabled = false; });
   }
 
   function advance() {
-    dlg.index += 1;
-    dlg.source = ''; dlg.result = ''; dlg.author = '';
+    dlg.index += 1; dlg.source = ''; dlg.result = ''; dlg.author = '';
     $('d-out').value = ''; $('d-src').value = '';
     updateHead();
     if (dlg.index >= dlg.books.length) return finish();
@@ -635,81 +570,78 @@
   }
 
   function finish() {
-    $('dlg-main').style.display = 'none';
-    $('dlg-done').style.display = 'block';
-    $('done-summary').textContent = '共 ' + dlg.books.length + ' 本，已覆盖 ' + dlg.covered.length + ' 本，跳过 ' + dlg.skipped.length + ' 本';
+    $('dlg-main').style.display = 'none'; $('dlg-done').style.display = 'block';
+    $('done-summary').textContent = t('done.summary', { total: dlg.books.length, covered: dlg.covered.length, skipped: dlg.skipped.length });
     $('dlg-bar').style.width = '100%'; $('dlg-percent').textContent = '100%';
     state.running = false; renderSel();
     if (window.MyBooksToolBridge && window.MyBooksToolBridge.notify) {
-      window.MyBooksToolBridge.notify('排版完成：覆盖 ' + dlg.covered.length + ' 本，跳过 ' + dlg.skipped.length + ' 本', 'success');
+      window.MyBooksToolBridge.notify(t('notify.done', { covered: dlg.covered.length, skipped: dlg.skipped.length }), 'success');
     }
   }
 
-  /* ---------- 事件 ---------- */
+  function copyResult() {
+    if (!dlg.result) return;
+    var text = dlg.result;
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { log(t('log.copied')); });
+    else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); log(t('log.copied')); }
+  }
+  function exportFile() {
+    if (!dlg.result) return;
+    var book = currentBook() || {};
+    var name = (book.title || ('book_' + (book.id || ''))).replace(/[\\/:*?"<>|]/g, '_');
+    var blob = new Blob([dlg.result], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob); var a = document.createElement('a');
+    a.href = url; a.download = name + '.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    log(t('log.exported', { name: name }));
+  }
+
+  function syncIndentRow() { $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none'; }
+
   $('search-btn').addEventListener('click', function () { state.search = $('q').value.trim(); state.page = 1; loadBooks(); });
   $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('search-btn').click(); });
   $('page-size').addEventListener('change', function () { state.num = Number(this.value) || 50; state.page = 1; loadBooks(); });
   $('prev').addEventListener('click', function () { if (state.page > 1) { state.page--; loadBooks(); } });
-  $('next').addEventListener('click', function () {
-    var pages = Math.max(1, Math.ceil(state.total / state.num));
-    if (state.page < pages) { state.page++; loadBooks(); }
-  });
-  $('jump').addEventListener('change', function () {
-    var pages = Math.max(1, Math.ceil(state.total / state.num));
-    state.page = Math.min(pages, Math.max(1, Number(this.value) || 1)); loadBooks();
-  });
+  $('next').addEventListener('click', function () { var pages = Math.max(1, Math.ceil(state.total / state.num)); if (state.page < pages) { state.page++; loadBooks(); } });
+  $('jump').addEventListener('change', function () { var pages = Math.max(1, Math.ceil(state.total / state.num)); state.page = Math.min(pages, Math.max(1, Number(this.value) || 1)); loadBooks(); });
   $('check-page').addEventListener('change', function () {
     var on = this.checked;
-    state.items.forEach(function (b) {
-      if (on) state.selected.set(b.id, { id: b.id, title: b.title }); else state.selected.delete(b.id);
-    });
+    state.items.forEach(function (b) { if (on) state.selected.set(b.id, { id: b.id, title: b.title }); else state.selected.delete(b.id); });
     render();
   });
   $('clear-sel').addEventListener('click', function () { state.selected.clear(); $('check-page').checked = false; render(); });
   $('start-btn').addEventListener('click', function () { if (!state.selected.size) return; state.running = true; renderSel(); openDialog(); });
   $('dlg-close').addEventListener('click', closeDialog);
   $('done-close').addEventListener('click', closeDialog);
-  $('dlg-skip').addEventListener('click', function () {
-    var b = currentBook(); if (b) { dlg.skipped.push(b.id); log((b.title || '') + ' 已跳过'); } advance();
-  });
+  $('dlg-skip').addEventListener('click', function () { var b = currentBook(); if (b) { dlg.skipped.push(b.id); log(t('log.skipped', { title: b.title || '' })); } advance(); });
+  $('d-process').addEventListener('click', function () { process(); });
+  $('d-cover').addEventListener('click', function () { cover(false); });
+  $('d-finish').addEventListener('click', function () { if (dlg.result) return cover(false).then(function (ok) { if (ok) advance(); }); advance(); });
+  $('d-copy').addEventListener('click', copyResult);
+  $('d-export').addEventListener('click', exportFile);
+  $('d-filter').addEventListener('input', function () { $('d-filter-len-row').style.display = this.value ? 'flex' : 'none'; });
+  $('d-smart').addEventListener('change', syncIndentRow);
+  syncIndentRow();
   document.querySelectorAll('#d-convert .seg-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('#d-convert .seg-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
     });
   });
-  function syncIndentRow() {
-    $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none';
-  }
-  $('d-smart').addEventListener('change', syncIndentRow);
-  syncIndentRow();
-  $('d-copy').addEventListener('click', copyResult);
-  $('d-export').addEventListener('click', exportFile);
-  $('d-filter').addEventListener('input', function () {
-    $('d-filter-len-row').style.display = this.value ? 'flex' : 'none';
-  });
-  $('d-process').addEventListener('click', function () { process(); });
-  $('d-cover').addEventListener('click', function () { cover(false); });
-  $('d-finish').addEventListener('click', function () {
-    if (dlg.result) return cover(false).then(function (ok) { if (ok) advance(); });
-    advance();
-  });
-  $('d-split').addEventListener('click', function () {
-    if (!dlg.source) return;
-    dlg.result = window.NovelFmt.splitInlineChapterTitles(dlg.source);
-    $('d-out').value = dlg.result.slice(0, DISPLAY_LIMIT);
-    $('d-out-stats').textContent = '字符 ' + dlg.result.length.toLocaleString();
-    log('已执行章节分割');
-  });
-  $('d-reorder').addEventListener('click', function () {
-    if (!dlg.result) { if (!dlg.source) return; dlg.result = window.NovelFmt.formatNovelText(dlg.source, options()); }
-    dlg.result = window.NovelFmt.reorderChaptersByTitle(dlg.result).output;
-    $('d-out').value = dlg.result.slice(0, DISPLAY_LIMIT);
-    $('d-out-stats').textContent = '字符 ' + dlg.result.length.toLocaleString();
-    log('已执行章节重排');
-  });
 
-  loadBooks();
+  function refreshDynamic() {
+    document.title = t('app.title');
+    renderSel();
+    if (state.items.length) render();
+    if (dlg.books.length) updateHead();
+    $('d-author').placeholder = t('opt.authorUnknown');
+  }
+  i18n.onChange(refreshDynamic);
+  i18n.ready.then(function () {
+    i18n.applyDom(document);
+    refreshDynamic();
+    loadBooks();
+  });
 })();
 </script>
 </body>
