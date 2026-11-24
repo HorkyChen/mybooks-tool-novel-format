@@ -1,58 +1,51 @@
 # mybooks-tool-novel-format
 
-MyBooks「工具箱」里的小说排版整理工具。把 TXT 小说按段落/章节重新排版后覆盖回书库，
-可选追加「精校」标签。**正文的读取和写回都在服务端完成**，浏览器只负责选书和看进度，
-因此百万字长篇也不会把标签页撑到 Out of Memory。
+MyBooks「工具箱」里的小说排版整理工具。界面按图书管理的习惯做：搜索、分页、跨页勾选，
+点「开始排版」后弹出与原版一致的排版弹窗，逐本处理并覆盖回书库。
+
+**排版与写回都复用主程序的 `/api/novel_format/*` 接口（JSON）**，本工具不额外落库、
+不改后端协议，只负责界面与交互。
 
 ## 功能
 
-- 搜索书库、勾选多本（只列出有 TXT 的书）
-- 段落排版：智能换行、段首缩进、长段落拆分、清理首尾空格
-- 章节处理：章节标题分行、合并重复章节标题、去除重复行、去掉行尾数字
-- 覆盖原 TXT（保持原文件编码：UTF-8 / GB18030 / Big5）
-- 可选追加「精校」标签（只追加，不动原有标签）
-- 后台任务 + 进度条 + 日志，可中途取消
+- 书籍列表：搜索（支持 calibre 语法）、分页（20/50/100/200）、封面/标签/格式展示
+- 勾选：跨页保留、按 id 去重、全选本页、一键清空
+- 弹窗：原文/结果只读预览（各限 5 万字）、排版选项、繁简转换、章节分割/重排、
+  自动覆盖、自动识别作者、覆盖/跳过/完成、批次进度与日志
+- 内存保护：每本之间停 200ms，每 10 本额外停 800ms，给浏览器 GC 回收大字符串
+- 覆盖成功后由主程序追加「精校」标签（只追加，不清空原有标签）
 
-## 实现方式
-
-```
-frontend/         iframe 页面（原生 JS + 脚手架 theme.css）
-backend/tool.py   BaseTool + api_routes（search / start / status / cancel）
-backend/formatter.js  排版算法（由 app/src/utils/novel 打包成的 Node CLI，随包携带）
-backend/formatter_src/  算法源码副本（novelUtils / textUtils / regex）
-scripts/formatter_entry.mjs / build-formatter.sh  重新打包 formatter.js
-```
-
-每本书的处理流程：
-
-1. `api.calibre.get_metadata()` 取书名
-2. `api.calibre.format_abspath(book_id, "TXT")` 拿真实路径
-3. 读文件 → 探测编码 → 转成 UTF-8 临时文件
-4. `node formatter.js in.txt out.txt opts.json`（每本一个子进程，退出即释放内存）
-5. 按原编码写回临时文件 → `api.calibre.add_format(..., replace=True)`
-6. 可选 `api.calibre.set_metadata()` 追加「精校」标签
-
-## 开发
-
-```bash
-npm install -g mybooks-tools-builder
-mytool validate .
-mytool build          # 产出 dist/novel_format-<version>.zip
-```
-
-重新生成 `backend/formatter.js`（改了排版算法后）：
-
-```bash
-bash scripts/build-formatter.sh
-```
-
-## 安装到 MyBooks
-
-1. 系统设置 → 高级配置项 → 打开工具开发者模式
-2. 系统管理 → 工具箱 → 上传 `dist/novel_format-0.1.0.zip`
-3. 重启 MyBooks 服务
-
-## 要求
+## 依赖
 
 - MyBooks v4.7.0+（Core API 1.5.0）
-- 运行容器内需要 `node`（官方镜像自带 Node 22）
+- 主程序需包含 `webserver/handlers/novel_format.py` 注册的接口：
+  - `GET  /api/novel_format/<id>/text`
+  - `POST /api/novel_format/<id>/save`
+  - `POST /api/novel_format/convert`
+
+## 目录
+
+```
+manifest.json
+backend/tool.py              # BaseTool 入口（仅元信息，逻辑都在主程序）
+frontend/index.html          # 书表 + 弹窗（原生 JS）
+frontend/lib/novel.js        # 浏览器版排版算法（由 formatter_src 打包）
+backend/formatter_src/       # 算法源码副本（novelUtils / textUtils / regex / authorDetect）
+scripts/browser_entry.mjs    # 打包入口
+scripts/build-browser.sh     # 重新生成 frontend/lib/novel.js
+```
+
+## 开发 / 打包
+
+```bash
+bash scripts/build-browser.sh     # 改了算法后重新打包
+npm install -g mybooks-tools-builder
+mytool validate .
+mytool build                      # dist/novel_format-<version>.zip
+```
+
+## 安装
+
+1. 系统设置 → 高级配置项 → 打开工具开发者模式
+2. 系统管理 → 工具箱 → 上传 zip
+3. 重启 MyBooks 服务
