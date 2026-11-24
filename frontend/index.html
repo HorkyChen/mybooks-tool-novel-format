@@ -161,10 +161,15 @@
     .switch input:checked + span { background: var(--mb-color-primary); }
     .switch input:checked + span::after { transform: translateX(16px); }
 
-    .field-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-    .field-row label { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
-    .field-row input[type=text] { flex: 1 1 auto; height: 34px; border: 1px solid var(--line); border-radius: 6px;
+    .field-row { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin-top: 12px; }
+    .field-row label { color: var(--muted); font-size: 12.5px; }
+    .field-row input[type=text], .field-row input[type=number] { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 6px;
       background: var(--card-bg); color: var(--text); padding: 0 10px; font-size: 13px; }
+    #d-filter-len-row { margin-top: 6px; }
+    .seg { display: flex; width: 100%; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; height: 34px; }
+    .seg-btn { flex: 1 1 0; border: 0; background: transparent; color: var(--text); padding: 0 8px; font-size: 13px; cursor: pointer; }
+    .seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+    .seg-btn.active { background: color-mix(in srgb, var(--mb-color-primary) 14%, transparent); color: var(--mb-color-primary); font-weight: 500; }
     .select { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg);
       color: var(--text); padding: 0 8px; font-size: 13px; }
 
@@ -282,6 +287,8 @@
             <div class="panel-title">
               <span>已校正文本</span>
               <span class="grow"></span>
+              <button id="d-copy" class="btn btn--sm btn--text">复制</button>
+              <button id="d-export" class="btn btn--sm btn--text">导出</button>
               <span class="badge">只读预览</span>
             </div>
             <div class="panel-body">
@@ -311,18 +318,33 @@
               <div class="group-title">高级</div>
               <div class="switch-row"><span>自动覆盖（处理完自动保存并继续）</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
               <div class="switch-row"><span>覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
+              <div class="switch-row"><span>处理后自动导出 TXT</span><label class="switch"><input id="d-autoexport" type="checkbox"><span></span></label></div>
+              <div class="field-row">
+                <label>特殊起始字符</label>
+                <input id="d-special" type="text" placeholder="如「☆、※」，命中的行按特殊行处理" />
+              </div>
+              <div class="field-row">
+                <label>手动过滤</label>
+                <input id="d-filter" type="text" placeholder="剔除包含这些字符的整行，多个字符用空格分隔" />
+              </div>
+              <div class="field-row" id="d-filter-len-row" style="display:none;">
+                <label>过滤行长度</label>
+                <input id="d-filter-len" type="number" min="0" placeholder="只过滤不超过该长度的行（0 = 不限制）" />
+              </div>
               <div class="field-row">
                 <label>自动识别作者</label>
-                <input id="d-author" type="text" readonly placeholder="未识别到作者" />
-                <label class="switch" title="覆盖时写入作者"><input id="d-author-on" type="checkbox"><span></span></label>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input id="d-author" type="text" readonly placeholder="未识别到作者" />
+                  <label class="switch" title="覆盖时写入作者"><input id="d-author-on" type="checkbox"><span></span></label>
+                </div>
               </div>
               <div class="field-row">
                 <label>繁简转换</label>
-                <select id="d-convert" class="select">
-                  <option value="none">不转换</option>
-                  <option value="s2t">简 → 繁</option>
-                  <option value="t2s">繁 → 简</option>
-                </select>
+                <div class="seg" id="d-convert">
+                  <button type="button" class="seg-btn active" data-val="none">不转换</button>
+                  <button type="button" class="seg-btn" data-val="t2s">繁 → 简</button>
+                  <button type="button" class="seg-btn" data-val="s2t">简 → 繁</button>
+                </div>
               </div>
             </div>
           </div>
@@ -517,13 +539,16 @@
   function options() {
     var o = {};
     document.querySelectorAll('[data-opt]').forEach(function (i) { o[i.getAttribute('data-opt')] = i.checked; });
+    o.specialStart = $('d-special').value || '';
+    o.filterText = $('d-filter').value || '';
+    o.maxFilterLineLength = Number($('d-filter-len').value) || 0;
     return o;
   }
 
   function process() {
     if (!dlg.source) return;
     dlg.processing = true; $('d-process').disabled = true;
-    var mode = $('d-convert').value;
+    var mode = document.querySelector('#d-convert .seg-btn.active').getAttribute('data-val');
     var text = dlg.source;
     var pre = mode === 'none' ? Promise.resolve(text) :
       fetch(API + '/convert', { method: 'POST', credentials: 'include',
@@ -538,6 +563,7 @@
         $('d-out-stats').textContent = '字符 ' + out.length.toLocaleString() + ' · 行 ' + out.split('\n').length.toLocaleString();
         $('d-out-hint').textContent = out.length > DISPLAY_LIMIT ? '全文 ' + out.length.toLocaleString() + ' 字，此处仅预览前 5 万字；覆盖仍使用完整内容' : '';
         log((currentBook().title || '') + ' 排版完成');
+        if ($('d-autoexport').checked) exportFile();
         if (dlg.auto) return cover(true);
       })
       .catch(function (err) { log('排版失败：' + (err.message || err)); })
@@ -564,6 +590,32 @@
       if (auto) return advance();
       return false;
     }).finally(function () { $('d-cover').disabled = false; });
+  }
+
+  function copyResult() {
+    if (!dlg.result) return;
+    var text = dlg.result;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { log('已复制全文'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      log('已复制全文');
+    }
+  }
+
+  function exportFile() {
+    if (!dlg.result) return;
+    var book = currentBook() || {};
+    var name = (book.title || ('book_' + (book.id || ''))).replace(/[\\/:*?"<>|]/g, '_');
+    var blob = new Blob([dlg.result], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name + '.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    log('已导出 ' + name + '.txt');
   }
 
   function advance() {
@@ -613,6 +665,17 @@
   $('done-close').addEventListener('click', closeDialog);
   $('dlg-skip').addEventListener('click', function () {
     var b = currentBook(); if (b) { dlg.skipped.push(b.id); log((b.title || '') + ' 已跳过'); } advance();
+  });
+  document.querySelectorAll('#d-convert .seg-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#d-convert .seg-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+  $('d-copy').addEventListener('click', copyResult);
+  $('d-export').addEventListener('click', exportFile);
+  $('d-filter').addEventListener('input', function () {
+    $('d-filter-len-row').style.display = this.value ? 'flex' : 'none';
   });
   $('d-process').addEventListener('click', function () { process(); });
   $('d-cover').addEventListener('click', function () { cover(false); });
