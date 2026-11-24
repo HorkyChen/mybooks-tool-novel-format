@@ -105,5 +105,8 @@
   "skip.reason.read_failed": "读取失败",
   "skip.reason.format_failed": "排版失败",
   "skip.reason.cover_failed": "覆盖失败",
-  "skip.reason.decode_failed": "编码无法识别，文件可能已损坏"
+  "skip.reason.decode_failed": "编码无法识别，文件可能已损坏",
+  "resume.text": "上次任务未完成：第 {index}/{total} 本，已覆盖 {covered}，跳过 {skipped}",
+  "resume.continue": "继续",
+  "resume.discard": "放弃"
 }

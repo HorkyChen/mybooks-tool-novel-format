@@ -105,5 +105,8 @@
   "skip.reason.read_failed": "Read failed",
   "skip.reason.format_failed": "Format failed",
   "skip.reason.cover_failed": "Overwrite failed",
-  "skip.reason.decode_failed": "Unknown encoding; file may be corrupted"
+  "skip.reason.decode_failed": "Unknown encoding; file may be corrupted",
+  "resume.text": "Unfinished batch: book {index}/{total}, {covered} overwritten, {skipped} skipped",
+  "resume.continue": "Resume",
+  "resume.discard": "Discard"
 }

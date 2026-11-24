@@ -105,5 +105,8 @@
   "skip.reason.read_failed": "讀取失敗",
   "skip.reason.format_failed": "排版失敗",
   "skip.reason.cover_failed": "覆蓋失敗",
-  "skip.reason.decode_failed": "編碼無法識別，檔案可能已損壞"
+  "skip.reason.decode_failed": "編碼無法識別，檔案可能已損壞",
+  "resume.text": "上次任務未完成：第 {index}/{total} 本，已覆蓋 {covered}，跳過 {skipped}",
+  "resume.continue": "繼續",
+  "resume.discard": "放棄"
 }

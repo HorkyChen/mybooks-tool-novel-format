@@ -68,6 +68,10 @@
       color: var(--muted); font-size: 13px;
     }
     .selection-bar .grow { flex: 1 1 auto; }
+    .resume-banner { display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+      padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: color-mix(in srgb, var(--mb-color-primary) 8%, transparent); font-size: 13px; }
+    .resume-banner .grow { flex: 1 1 auto; }
     .chip {
       display: inline-flex; align-items: center; height: 24px; padding: 0 10px;
       border-radius: 12px; font-size: 12px;
@@ -188,7 +192,7 @@
 
     .dlg-foot { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--line); background: var(--card-bg); }
     .dlg-foot .grow { flex: 1 1 auto; }
-    .mini-bar { position: fixed; right: 20px; bottom: 20px; z-index: 80; display: none;
+    .mini-bar { position: fixed; left: 16px; top: 16px; z-index: 80; display: none; cursor: move; touch-action: none;
       align-items: center; gap: 10px; max-width: min(460px, 90vw);
       padding: 10px 14px; border-radius: 999px; background: var(--card-bg);
       border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; }
@@ -231,6 +235,13 @@
     <button id="clear-sel" class="btn btn--sm btn--text" data-i18n="sel.clear">清空</button>
     <span class="grow"></span>
     <span id="total-text"></span>
+  </div>
+
+  <div id="resume-banner" class="resume-banner" style="display:none;">
+    <span id="resume-text"></span>
+    <span class="grow"></span>
+    <button id="resume-continue" class="btn btn--sm btn--primary" data-i18n="resume.continue">继续</button>
+    <button id="resume-discard" class="btn btn--sm" data-i18n="resume.discard">放弃</button>
   </div>
 
   <div class="card table-wrap">
@@ -515,9 +526,48 @@
   }
   function log(msg) { dlg.logs.push(new Date().toTimeString().slice(0, 8) + ' ' + msg); $('d-log').textContent = dlg.logs.slice(-80).join('\n'); $('d-log').scrollTop = $('d-log').scrollHeight; }
 
-  function openDialog() {
-    dlg.books = Array.from(state.selected.values());
-    dlg.index = 0; dlg.covered = []; dlg.skipped = []; dlg.logs = [];
+  var JOB_KEY = 'novelFormat.job';
+
+  function saveJob() {
+    if (!dlg.books.length) return;
+    try {
+      localStorage.setItem(JOB_KEY, JSON.stringify({
+        books: dlg.books, index: dlg.index,
+        covered: dlg.covered, skipped: dlg.skipped, updatedAt: Date.now()
+      }));
+    } catch (e) { /* 忽略存储失败 */ }
+  }
+
+  function clearJob() {
+    try { localStorage.removeItem(JOB_KEY); } catch (e) { /* ignore */ }
+    $('resume-banner').style.display = 'none';
+  }
+
+  function readJob() {
+    try {
+      var raw = localStorage.getItem(JOB_KEY);
+      if (!raw) return null;
+      var job = JSON.parse(raw);
+      if (!job || !job.books || !job.books.length) return null;
+      if (job.index >= job.books.length) return null;
+      return job;
+    } catch (e) { return null; }
+  }
+
+  function showResumeBanner(job) {
+    $('resume-text').textContent = t('resume.text', {
+      index: Math.min(job.index + 1, job.books.length), total: job.books.length,
+      covered: (job.covered || []).length, skipped: (job.skipped || []).length
+    });
+    $('resume-banner').style.display = 'flex';
+  }
+
+  function openDialog(restore) {
+    if (!restore) {
+      clearJob();
+      dlg.books = Array.from(state.selected.values());
+      dlg.index = 0; dlg.covered = []; dlg.skipped = []; dlg.logs = [];
+    }
     $('dialog').classList.remove('done-mode');
     $('dlg-done').style.display = 'none'; $('dlg-main').style.display = 'block';
     $('overlay').classList.add('open'); $('dialog').classList.add('open');
@@ -527,6 +577,7 @@
     $('overlay').classList.remove('open'); $('dialog').classList.remove('open');
     $('mini-bar').classList.remove('show');
     state.running = false; renderSel();
+    if (dlg.books.length && dlg.index < dlg.books.length) saveJob();
   }
   function minimizeDialog() {
     $('overlay').classList.remove('open'); $('dialog').classList.remove('open');
@@ -551,6 +602,7 @@
     var pct = Math.round(dlg.index * 100 / total);
     $('dlg-percent').textContent = pct + '%'; $('dlg-bar').style.width = pct + '%';
     updateMini();
+    saveJob();
   }
 
   function loadCurrent() {
@@ -669,6 +721,7 @@
   }
 
   function finish() {
+    clearJob();
     $('mini-bar').classList.remove('show');
     $('dialog').classList.add('done-mode');
     $('dlg-main').style.display = 'none'; $('dlg-done').style.display = 'block';
@@ -891,6 +944,44 @@
     applyPrefs(Object.assign({}, DEFAULT_PREFS, saved));
   }
 
+  function initMiniDrag() {
+    var bar = $('mini-bar');
+    try {
+      var pos = JSON.parse(localStorage.getItem('novelFormat.miniPos') || 'null');
+      if (pos && typeof pos.left === 'number') {
+        bar.style.left = pos.left + 'px';
+        bar.style.top = pos.top + 'px';
+      }
+    } catch (e) { /* ignore */ }
+    var dragging = false, offsetX = 0, offsetY = 0;
+    bar.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button')) return;
+      dragging = true;
+      var r = bar.getBoundingClientRect();
+      offsetX = e.clientX - r.left;
+      offsetY = e.clientY - r.top;
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var w = bar.offsetWidth, h = bar.offsetHeight;
+      var left = Math.max(4, Math.min(window.innerWidth - w - 4, e.clientX - offsetX));
+      var top = Math.max(4, Math.min(window.innerHeight - h - 4, e.clientY - offsetY));
+      bar.style.left = left + 'px';
+      bar.style.top = top + 'px';
+    });
+    bar.addEventListener('pointerup', function () {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        localStorage.setItem('novelFormat.miniPos', JSON.stringify({
+          left: parseInt(bar.style.left, 10) || 16,
+          top: parseInt(bar.style.top, 10) || 16
+        }));
+      } catch (e) { /* ignore */ }
+    });
+  }
+
   function syncIndentRow() { $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none'; }
 
   $('search-btn').addEventListener('click', function () { state.search = $('q').value.trim(); state.page = 1; loadBooks(); });
@@ -905,7 +996,23 @@
     render();
   });
   $('clear-sel').addEventListener('click', function () { state.selected.clear(); $('check-page').checked = false; render(); });
-  $('start-btn').addEventListener('click', function () { if (!state.selected.size) return; state.running = true; renderSel(); openDialog(); });
+  $('start-btn').addEventListener('click', function () {
+    if (!state.selected.size) return;
+    state.running = true; renderSel(); openDialog(false);
+  });
+  $('resume-continue').addEventListener('click', function () {
+    var job = readJob();
+    if (!job) return;
+    dlg.books = job.books;
+    dlg.index = job.index || 0;
+    dlg.covered = job.covered || [];
+    dlg.skipped = job.skipped || [];
+    dlg.logs = [];
+    $('resume-banner').style.display = 'none';
+    state.running = true; renderSel();
+    openDialog(true);
+  });
+  $('resume-discard').addEventListener('click', function () { clearJob(); });
   $('dlg-min').addEventListener('click', minimizeDialog);
   $('mini-restore').addEventListener('click', restoreDialog);
   $('dlg-close').addEventListener('click', closeDialog);
@@ -947,6 +1054,9 @@
   i18n.ready.then(function () {
     i18n.applyDom(document);
     restorePrefs();
+    initMiniDrag();
+    var pending = readJob();
+    if (pending) showResumeBanner(pending);
     refreshDynamic();
     loadBooks();
   });
