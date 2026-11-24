@@ -6,184 +6,347 @@
   <title>小说排版整理</title>
   <link rel="stylesheet" href="lib/theme.css" />
   <style>
-    :root { --line: rgba(0,0,0,.12); }
-    body { margin: 0; }
-    .wrap { padding: 16px 18px 40px; }
-    h1 { font-size: 1.25em; margin: 0 0 4px; }
-    .muted { opacity: .65; font-size: .88em; }
-    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .grow { flex: 1 1 auto; min-width: 0; }
-    .search { display: flex; gap: 8px; margin: 14px 0 8px; }
-    .search input { flex: 1 1 auto; }
-    .table { border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 52vh; }
-    table { width: 100%; border-collapse: collapse; font-size: .92em; }
-    th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
-    th { position: sticky; top: 0; background: var(--mb-bg, #fff); z-index: 1; font-weight: 600; white-space: nowrap; }
-    tbody tr:hover { background: rgba(0,0,0,.03); }
-    tbody tr.is-selected { background: rgba(25,118,210,.08); }
-    .cover { width: 30px; height: 40px; object-fit: cover; border-radius: 3px; background: #eee; display: block; }
-    .tag { display: inline-block; padding: 0 6px; border-radius: 10px; background: rgba(0,0,0,.06); font-size: .82em; margin: 1px 2px 1px 0; }
-    .pager { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .pager input[type=number] { width: 64px; }
-    .empty { padding: 24px; text-align: center; }
-    /* dialog */
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 90; }
+    :root {
+      --page-bg: #f5f6f8;
+      --card-bg: #ffffff;
+      --line: #e3e5e8;
+      --text: #1f2329;
+      --muted: #7a8088;
+      --radius: 8px;
+    }
+    body[data-theme="dark"] {
+      --page-bg: #121212;
+      --card-bg: #1e1e1e;
+      --line: #35383c;
+      --text: #e9eaec;
+      --muted: #9aa0a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page-bg) !important;
+      color: var(--text);
+      font-family: var(--mb-font);
+      font-size: 14px;
+    }
+    .page { max-width: 1440px; margin: 0 auto; padding: 28px 32px 64px; }
+
+    h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: .2px; }
+    .sub { color: var(--muted); font-size: 13px; margin: 0 0 22px; line-height: 1.6; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--line); border-radius: var(--radius); }
+
+    /* ---------- 搜索 / 操作 ---------- */
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+    .search { flex: 1 1 auto; display: flex; gap: 12px; align-items: center; min-width: 320px; }
+    .search input {
+      flex: 1 1 auto; height: 44px; padding: 0 14px; font-size: 14px;
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--card-bg); color: var(--text); outline: none;
+    }
+    .search input:focus { border-color: var(--mb-color-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mb-color-primary) 16%, transparent); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 44px; padding: 0 20px; border-radius: var(--radius);
+      border: 1px solid var(--line); background: transparent; color: var(--text);
+      font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+    .btn--primary { background: var(--mb-color-primary); border-color: var(--mb-color-primary); color: var(--btn-primary-fg, #fff); }
+    .btn--primary:hover { filter: brightness(1.04); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn--sm { height: 34px; padding: 0 14px; font-size: 13px; }
+    .btn--text { border-color: transparent; background: transparent; }
+
+    .selection-bar {
+      display: flex; align-items: center; gap: 14px; padding: 0 2px 12px;
+      color: var(--muted); font-size: 13px;
+    }
+    .selection-bar .grow { flex: 1 1 auto; }
+    .chip {
+      display: inline-flex; align-items: center; height: 24px; padding: 0 10px;
+      border-radius: 12px; font-size: 12px;
+      background: color-mix(in srgb, var(--mb-color-primary) 12%, transparent);
+      color: var(--mb-color-primary);
+    }
+    .chip--warn { background: color-mix(in srgb, #ed6c02 14%, transparent); color: #ed6c02; }
+
+    /* ---------- 表格 ---------- */
+    .table-wrap { overflow: hidden; }
+    .table-scroll { max-height: 56vh; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0; z-index: 2; background: var(--card-bg);
+      text-align: left; font-weight: 600; font-size: 12.5px; color: var(--muted);
+      padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap;
+    }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: middle; }
+    tbody tr:hover td { background: color-mix(in srgb, var(--text) 3%, transparent); }
+    tbody tr.is-selected td { background: color-mix(in srgb, var(--mb-color-primary) 8%, transparent); }
+    .cover { width: 34px; height: 46px; object-fit: cover; border-radius: 4px; background: var(--line); display: block; }
+    .tag { display: inline-block; margin: 1px 4px 1px 0; padding: 1px 8px; border-radius: 10px;
+      background: color-mix(in srgb, var(--text) 7%, transparent); font-size: 12px; color: var(--muted); }
+    .empty { padding: 48px 0; text-align: center; color: var(--muted); }
+
+    /* 分页统一放右下角 */
+    .table-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 12px 16px; border-top: 1px solid var(--line);
+      background: var(--card-bg); flex-wrap: wrap;
+    }
+    .table-foot__info { color: var(--muted); font-size: 13px; }
+    .pager { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: nowrap; }
+    .pager select, .pager input {
+      height: 34px; border: 1px solid var(--line); border-radius: 6px;
+      background: var(--card-bg); color: var(--text); font-size: 13px; padding: 0 8px;
+    }
+    .pager input { width: 64px; }
+    .pager .muted { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+    /* ---------- 弹窗 ---------- */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.46); display: none; z-index: 90; }
     .overlay.open { display: block; }
-    .dialog { position: fixed; z-index: 91; left: 50%; top: 50%; transform: translate(-50%,-50%);
-      width: min(1100px, 94vw); height: min(88vh, 900px); background: var(--mb-bg,#fff); border-radius: 10px;
-      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 18px 60px rgba(0,0,0,.3); }
+    .dialog {
+      position: fixed; z-index: 91; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: min(1220px, 94vw); height: min(90vh, 940px);
+      background: var(--card-bg); color: var(--text);
+      border-radius: 8px; display: none; flex-direction: column; overflow: hidden;
+      box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12);
+    }
     .dialog.open { display: flex; }
-    .dlg-head { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .dlg-body { flex: 1 1 auto; overflow: auto; padding: 12px 16px; }
-    .dlg-foot { padding: 10px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
-    .book-title { font-weight: 600; }
-    .progress { height: 6px; background: rgba(0,0,0,.08); border-radius: 3px; overflow: hidden; width: 140px; }
-    .progress > i { display: block; height: 100%; background: #1976d2; width: 0; }
-    textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
-      line-height: 1.5; border: 1px solid var(--line); border-radius: 6px; padding: 8px; resize: vertical; }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
-    .card h3 { margin: 0 0 8px; font-size: .95em; }
-    .stats { font-size: .82em; opacity: .7; margin-top: 4px; }
-    .opts { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 6px 14px; font-size: .9em; }
-    .opt { display: flex; gap: 6px; align-items: center; }
-    .rules { font-size: .82em; opacity: .75; padding: 8px 0 0; }
-    .rules li { margin: 2px 0; }
-    .author-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-    .author-row input { flex: 1 1 auto; }
-    .chip { font-size: .8em; padding: 1px 8px; border-radius: 10px; background: rgba(25,118,210,.12); color: #1565c0; }
-    .chip.warn { background: rgba(245,124,0,.15); color: #e65100; }
-    .log { font-size: .85em; max-height: 120px; overflow: auto; white-space: pre-wrap; opacity: .8; }
+    .dlg-head { padding: 18px 24px 12px; border-bottom: 1px solid var(--line); }
+    .dlg-title-row { display: flex; align-items: center; gap: 12px; }
+    .dlg-title { font-size: 20px; font-weight: 500; margin: 0; }
+    .dlg-title-row .grow { flex: 1 1 auto; }
+    .dlg-close { border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+    .dlg-close:hover { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+    .dlg-meta { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .dlg-meta .grow { flex: 1 1 auto; }
+    .progress { width: 180px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--mb-color-primary); transition: width .2s ease; }
+    .dlg-body { flex: 1 1 auto; overflow: auto; padding: 20px 24px; }
+    .dlg-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 20px; align-items: start; }
+    @media (max-width: 980px) { .dlg-grid { grid-template-columns: 1fr; } }
+
+    .panel { background: var(--card-bg); border: 1px solid var(--line); border-radius: 6px; }
+    .panel + .panel { margin-top: 16px; }
+    .panel-title { display: flex; align-items: center; gap: 8px; padding: 14px 18px 10px;
+      font-size: 15px; font-weight: 500; }
+    .panel-title .grow { flex: 1 1 auto; }
+    .panel-body { padding: 0 18px 16px; }
+    .badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border: 1px solid var(--line);
+      border-radius: 4px; font-size: 12px; color: var(--muted); }
+    textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;
+      background: var(--card-bg); color: var(--text); resize: vertical;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.65;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--mb-color-primary); }
+    .stats { display: flex; gap: 18px; color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+    .hint { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+    .panel-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--line); }
+    .process-row { display: flex; gap: 10px; margin: 16px 0; align-items: stretch; }
+    .btn--block { flex: 1 1 auto; height: 46px; font-size: 15px; }
+
+    .group-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
+    .group-title:first-child { margin-top: 4px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13.5px; }
+    .switch-row.sub { padding-left: 18px; color: var(--muted); }
+    .switch { position: relative; width: 34px; height: 18px; flex: 0 0 auto; }
+    .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .switch span { position: absolute; inset: 0; border-radius: 9px; background: color-mix(in srgb, var(--text) 25%, transparent); transition: .18s; }
+    .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: .18s; }
+    .switch input:checked + span { background: var(--mb-color-primary); }
+    .switch input:checked + span::after { transform: translateX(16px); }
+
+    .field-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .field-row label { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+    .field-row input[type=text] { flex: 1 1 auto; height: 34px; border: 1px solid var(--line); border-radius: 6px;
+      background: var(--card-bg); color: var(--text); padding: 0 10px; font-size: 13px; }
+    .select { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg);
+      color: var(--text); padding: 0 8px; font-size: 13px; }
+
+    .rules { margin: 18px 2px 0; padding: 0; list-style: none; color: var(--muted); font-size: 12.5px; line-height: 1.8; }
+    .rules li::before { content: "·"; margin-right: 8px; }
+    .log { margin-top: 12px; max-height: 130px; overflow: auto; white-space: pre-wrap;
+      font-size: 12.5px; color: var(--muted); background: color-mix(in srgb, var(--text) 4%, transparent);
+      border-radius: 6px; padding: 10px 12px; }
+
+    .dlg-foot { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--line); background: var(--card-bg); }
+    .dlg-foot .grow { flex: 1 1 auto; }
+    .done { padding: 48px 24px; text-align: center; }
+    .done h2 { font-size: 20px; font-weight: 500; margin: 0 0 10px; }
+    .done p { color: var(--muted); margin: 0 0 22px; }
   </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
   <h1>小说排版整理</h1>
-  <div class="muted">勾选书籍 → 开始 → 在弹窗里逐本排版并覆盖。沿用主程序 <code>/api/novel_format</code> 接口，每本之间停 200ms 给浏览器回收内存。</div>
+  <p class="sub">勾选书籍后开始，逐本排版并覆盖回书库。正文只在「打开弹窗」时读取当前一本，处理完即释放。</p>
 
-  <div class="search">
-    <input id="q" class="mb-input" placeholder="搜索书名 / 作者 / 标签（支持 calibre 语法，如 tags:小说）" />
-    <button id="search-btn" class="mb-btn">搜索</button>
+  <div class="toolbar">
+    <div class="search">
+      <input id="q" placeholder="搜索书名 / 作者 / 标签，支持 calibre 语法（如 tags:小说）" />
+      <button id="search-btn" class="btn">搜索</button>
+    </div>
+    <button id="start-btn" class="btn btn--primary" disabled>开始排版</button>
   </div>
 
-  <div class="row" style="margin-bottom:8px;">
-    <label class="opt"><input id="check-page" type="checkbox" /> 全选本页</label>
-    <span id="sel-count" class="chip">已选 0 本（跨页）</span>
-    <button id="clear-sel" class="mb-btn mb-btn--secondary" style="padding:2px 10px;">清空</button>
-    <span class="grow"></span>
-    <span id="total-text" class="muted"></span>
-    <button id="start-btn" class="mb-btn" disabled>开始排版</button>
-  </div>
-
-  <div class="table">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:36px;"></th><th style="width:46px;">封面</th><th style="width:70px;">ID</th>
-          <th>书名</th><th style="width:140px;">作者</th><th style="width:180px;">标签</th><th style="width:90px;">格式</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="empty" class="empty muted" style="display:none;">没有匹配的书籍</div>
-  </div>
-
-  <div class="pager">
-    <button id="prev" class="mb-btn mb-btn--secondary" style="padding:2px 10px;">上一页</button>
-    <span id="page-info" class="muted">1 / 1</span>
-    <button id="next" class="mb-btn mb-btn--secondary" style="padding:2px 10px;">下一页</button>
-    <label class="muted">每页
-      <select id="page-size" class="mb-select" style="padding:2px 6px;">
-        <option>20</option><option selected>50</option><option>100</option><option>200</option>
-      </select>
+  <div class="selection-bar">
+    <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+      <input id="check-page" type="checkbox" style="width:16px;height:16px;accent-color:var(--mb-color-primary);" />
+      <span>全选本页</span>
     </label>
-    <label class="muted">跳至 <input id="jump" type="number" min="1" value="1" /> 页</label>
+    <span id="sel-count" class="chip">已选 0 本（跨页）</span>
+    <button id="clear-sel" class="btn btn--sm btn--text">清空</button>
+    <span class="grow"></span>
+    <span id="total-text"></span>
+  </div>
+
+  <div class="card table-wrap">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:42px;"></th><th style="width:56px;">封面</th><th style="width:76px;">ID</th>
+            <th>书名</th><th style="width:150px;">作者</th><th style="width:200px;">标签</th><th style="width:110px;">格式</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty" style="display:none;">没有匹配的书籍</div>
+    </div>
+    <div class="table-foot">
+      <div class="table-foot__info" id="foot-info"></div>
+      <div class="pager">
+        <button id="prev" class="btn btn--sm">上一页</button>
+        <span id="page-info" class="muted">1 / 1</span>
+        <button id="next" class="btn btn--sm">下一页</button>
+        <span class="muted">每页</span>
+        <select id="page-size">
+          <option>20</option><option selected>50</option><option>100</option><option>200</option>
+        </select>
+        <span class="muted">跳至</span>
+        <input id="jump" type="number" min="1" value="1" />
+        <span class="muted">页</span>
+      </div>
+    </div>
   </div>
 </div>
 
 <div id="overlay" class="overlay"></div>
 <div id="dialog" class="dialog">
   <div class="dlg-head">
-    <span class="book-title">小说排版整理</span>
-    <span id="dlg-progress-text" class="muted">第 1/1 本</span>
-    <span id="dlg-covered" class="chip">已覆盖 0</span>
-    <span id="dlg-skipped" class="chip warn">跳过 0</span>
-    <div class="progress"><i id="dlg-bar"></i></div>
-    <span id="dlg-percent" class="muted">0%</span>
-    <span class="grow"></span>
-    <button id="dlg-skip" class="mb-btn mb-btn--secondary" style="padding:2px 10px;">跳过本书</button>
-    <button id="dlg-close" class="mb-btn mb-btn--secondary" style="padding:2px 10px;">关闭</button>
+    <div class="dlg-title-row">
+      <h2 class="dlg-title">小说排版整理</h2>
+      <span class="grow"></span>
+      <button id="dlg-close" class="dlg-close" title="关闭">×</button>
+    </div>
+    <div class="dlg-meta">
+      <span id="dlg-progress-text">第 1/1 本</span>
+      <span id="dlg-covered" class="chip">已覆盖 0</span>
+      <span id="dlg-skipped" class="chip chip--warn">跳过 0</span>
+      <div class="progress"><i id="dlg-bar"></i></div>
+      <span id="dlg-percent">0%</span>
+      <span class="grow"></span>
+      <button id="dlg-skip" class="btn btn--sm">跳过本书</button>
+    </div>
   </div>
+
   <div class="dlg-body">
     <div id="dlg-main">
-      <div class="book-title" id="d-book" style="margin-bottom:8px;"></div>
-      <div class="cols">
-        <div class="card">
-          <h3>当前书籍原文 <span id="d-src-meta" class="muted"></span></h3>
-          <textarea id="d-src" rows="14" readonly></textarea>
-          <div class="stats" id="d-src-stats"></div>
+      <div class="dlg-grid">
+        <div>
+          <div class="panel">
+            <div class="panel-title">
+              <span>当前书籍原文</span>
+              <span class="grow"></span>
+              <span class="badge" id="d-src-enc">utf-8</span>
+              <span class="badge" id="d-src-size">0 KB</span>
+            </div>
+            <div class="panel-body">
+              <textarea id="d-src" rows="12" readonly></textarea>
+              <div class="stats"><span id="d-src-stats"></span></div>
+            </div>
+          </div>
+
+          <div class="process-row">
+            <button id="d-process" class="btn btn--primary btn--block">开始处理</button>
+            <button id="d-split" class="btn" title="章节分割">章节分割</button>
+            <button id="d-reorder" class="btn" title="章节重排">章节重排</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">
+              <span>已校正文本</span>
+              <span class="grow"></span>
+              <span class="badge">只读预览</span>
+            </div>
+            <div class="panel-body">
+              <textarea id="d-out" rows="10" readonly></textarea>
+              <div class="stats"><span id="d-out-stats"></span></div>
+              <div class="hint" id="d-out-hint"></div>
+            </div>
+          </div>
         </div>
-        <div class="card">
-          <h3>已校正文本（只读预览）</h3>
-          <textarea id="d-out" rows="14" readonly></textarea>
-          <div class="stats" id="d-out-stats"></div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-title">配置选项</div>
+            <div class="panel-body">
+              <div class="group-title">段落排版</div>
+              <div class="switch-row"><span>智能换行</span><label class="switch"><input type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
+              <div class="switch-row"><span>段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
+              <div class="switch-row"><span>长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit" checked><span></span></label></div>
+              <div class="switch-row"><span>清理首尾空格</span><label class="switch"><input type="checkbox" data-opt="enableTrim" checked><span></span></label></div>
+
+              <div class="group-title">章节处理</div>
+              <div class="switch-row"><span>章节标题分行</span><label class="switch"><input type="checkbox" data-opt="enableChapterSplit" checked><span></span></label></div>
+              <div class="switch-row"><span>合并重复章节标题</span><label class="switch"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked><span></span></label></div>
+              <div class="switch-row"><span>去除重复行</span><label class="switch"><input type="checkbox" data-opt="removeDuplicateLines" checked><span></span></label></div>
+              <div class="switch-row"><span>去掉行尾数字</span><label class="switch"><input type="checkbox" data-opt="enableLineEndNumbers"><span></span></label></div>
+
+              <div class="group-title">高级</div>
+              <div class="switch-row"><span>自动覆盖（处理完自动保存并继续）</span><label class="switch"><input id="d-auto" type="checkbox"><span></span></label></div>
+              <div class="switch-row"><span>覆盖后追加「精校」标签</span><label class="switch"><input id="d-tag" type="checkbox" checked><span></span></label></div>
+              <div class="field-row">
+                <label>自动识别作者</label>
+                <input id="d-author" type="text" readonly placeholder="未识别到作者" />
+                <label class="switch" title="覆盖时写入作者"><input id="d-author-on" type="checkbox"><span></span></label>
+              </div>
+              <div class="field-row">
+                <label>繁简转换</label>
+                <select id="d-convert" class="select">
+                  <option value="none">不转换</option>
+                  <option value="s2t">简 → 繁</option>
+                  <option value="t2s">繁 → 简</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <ul class="rules">
+            <li>勾选状态跨页保留，批量请求按 id 去重。</li>
+            <li>每本之间停 200ms，每 10 本额外停 800ms，给浏览器回收大字符串。</li>
+            <li>覆盖沿用主程序接口，按原文件编码写回；「精校」标签只追加，不清空原有标签。</li>
+          </ul>
+          <div class="log" id="d-log"></div>
         </div>
       </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button id="d-process" class="mb-btn">开始处理</button>
-        <button id="d-split" class="mb-btn mb-btn--secondary">章节分割</button>
-        <button id="d-reorder" class="mb-btn mb-btn--secondary">章节重排</button>
-        <span id="d-status" class="muted"></span>
-      </div>
-
-      <div class="card" style="margin-top:12px;">
-        <h3>配置选项</h3>
-        <div class="opts">
-          <label class="opt"><input type="checkbox" data-opt="smartLineBreak" checked /> 智能换行</label>
-          <label class="opt"><input type="checkbox" data-opt="enableIndent" checked /> 段首缩进</label>
-          <label class="opt"><input type="checkbox" data-opt="enableParagraphSplit" checked /> 长段落拆分</label>
-          <label class="opt"><input type="checkbox" data-opt="enableTrim" checked /> 清理首尾空格</label>
-          <label class="opt"><input type="checkbox" data-opt="enableChapterSplit" checked /> 章节标题分行</label>
-          <label class="opt"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked /> 合并重复章节标题</label>
-          <label class="opt"><input type="checkbox" data-opt="removeDuplicateLines" checked /> 去除重复行</label>
-          <label class="opt"><input type="checkbox" data-opt="enableLineEndNumbers" /> 去掉行尾数字</label>
-        </div>
-        <div class="opts" style="margin-top:8px;">
-          <label class="opt">繁简转换
-            <select id="d-convert" class="mb-select" style="padding:2px 6px;">
-              <option value="none">不转换</option>
-              <option value="s2t">简 → 繁</option>
-              <option value="t2s">繁 → 简</option>
-            </select>
-          </label>
-          <label class="opt"><input id="d-auto" type="checkbox" /> 自动覆盖（处理完自动保存并进入下一本）</label>
-          <label class="opt"><input id="d-tag" type="checkbox" checked /> 覆盖后追加「精校」标签</label>
-        </div>
-        <div class="author-row">
-          <span class="muted" style="white-space:nowrap;">自动识别作者</span>
-          <input id="d-author" class="mb-input" readonly placeholder="未识别到作者" />
-          <label class="opt"><input id="d-author-on" type="checkbox" /> 覆盖时写入</label>
-        </div>
-      </div>
-
-      <ul class="rules muted">
-        <li>勾选状态跨页保留，批量请求已按 id 去重。</li>
-        <li>每本书处理后暂停 200ms；每处理 10 本额外停顿 800ms，给浏览器 GC 回收大字符串。</li>
-        <li>覆盖沿用主程序接口，按原文件编码写回；「精校」标签只追加，不清空原有标签。</li>
-      </ul>
-      <div class="log" id="d-log"></div>
     </div>
 
-    <div id="dlg-done" style="display:none; padding:24px; text-align:center;">
-      <h2 style="margin:0 0 8px;">本批次已处理完毕</h2>
-      <div id="done-summary" class="muted"></div>
+    <div id="dlg-done" class="done" style="display:none;">
+      <h2>本批次已处理完毕</h2>
+      <p id="done-summary"></p>
+      <button id="done-close" class="btn btn--primary">关闭</button>
     </div>
   </div>
   <div class="dlg-foot">
     <span class="grow"></span>
-    <button id="d-cover" class="mb-btn">覆盖</button>
-    <button id="d-finish" class="mb-btn mb-btn--secondary">完成</button>
+    <button id="d-cover" class="btn">覆盖</button>
+    <button id="d-finish" class="btn btn--primary">完成 ›</button>
   </div>
 </div>
 
@@ -195,55 +358,69 @@
   var API = '/api/novel_format';
   var DISPLAY_LIMIT = 50000;
 
-  var state = {
-    page: 1, num: 50, total: 0, search: '', items: [],
-    selected: new Map(),          // id -> {id,title,author}
-    running: false,
-  };
-
+  var state = { page: 1, num: 50, total: 0, search: '', items: [], selected: new Map(), running: false };
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-  }); }
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-  // ---------------- 书籍列表 ----------------
+  /* ---------- 主题：跟随宿主明暗 + 主色 ---------- */
+  function applyTheme() {
+    var bridge = window.MyBooksToolBridge || {};
+    var dark = bridge.theme === 'dark';
+    document.body.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var primary = null;
+    try {
+      primary = getComputedStyle(window.parent.document.documentElement)
+        .getPropertyValue('--primary-color').trim();
+    } catch (e) { primary = null; }
+    if (!primary) {
+      try {
+        var s = JSON.parse(localStorage.getItem('appearance_settings') || '{}');
+        primary = s.accent || s.brandColor || null;
+      } catch (e) { primary = null; }
+    }
+    if (primary) {
+      document.documentElement.style.setProperty('--mb-color-primary', primary);
+      var rgb = primary.replace('#', '');
+      var r = parseInt(rgb.substr(0, 2), 16), g = parseInt(rgb.substr(2, 2), 16), b = parseInt(rgb.substr(4, 2), 16);
+      var lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      document.documentElement.style.setProperty('--btn-primary-fg', lum > 0.65 ? '#111' : '#fff');
+    }
+  }
+  if (window.MyBooksToolBridge && window.MyBooksToolBridge.onThemeChange) {
+    window.MyBooksToolBridge.onThemeChange(applyTheme);
+  }
+  applyTheme();
+
+  /* ---------- 列表 ---------- */
   function loadBooks() {
     var q = new URLSearchParams();
-    q.set('page', state.page); q.set('num', state.num);
-    q.set('sort', 'id'); q.set('desc', 'true');
+    q.set('page', state.page); q.set('num', state.num); q.set('sort', 'id'); q.set('desc', 'true');
     if (state.search) q.set('search', state.search);
-    $('tbody').innerHTML = '<tr><td colspan="7" class="empty muted">加载中…</td></tr>';
+    $('tbody').innerHTML = '<tr><td colspan="7" class="empty">加载中…</td></tr>';
     fetch('/api/admin/book/list?' + q.toString(), { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (rsp) {
         if (rsp.err !== 'ok') throw new Error(rsp.msg || '加载失败');
-        state.items = rsp.items || [];
-        state.total = rsp.total || 0;
-        render();
+        state.items = rsp.items || []; state.total = rsp.total || 0; render();
       })
       .catch(function (err) {
-        $('tbody').innerHTML = '<tr><td colspan="7" class="empty muted">' + esc(err.message) + '</td></tr>';
+        $('tbody').innerHTML = '<tr><td colspan="7" class="empty">' + esc(err.message) + '</td></tr>';
       });
   }
 
   function render() {
-    var tb = $('tbody');
-    tb.innerHTML = '';
+    var tb = $('tbody'); tb.innerHTML = '';
     $('empty').style.display = state.items.length ? 'none' : 'block';
     state.items.forEach(function (b) {
       var tr = document.createElement('tr');
-      var id = b.id;
-      if (state.selected.has(id)) tr.className = 'is-selected';
+      if (state.selected.has(b.id)) tr.className = 'is-selected';
       var tags = (b.tags || []).slice(0, 6).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('');
-      var formats = (b.files || []).map(function (f) { return f.format; }).join(',');
+      var formats = (b.files || []).map(function (f) { return f.format; }).join(', ');
       tr.innerHTML =
-        '<td><input type="checkbox" data-id="' + id + '" ' + (state.selected.has(id) ? 'checked' : '') + '></td>' +
-        '<td><img class="cover" loading="lazy" src="/get/thumb_240_320/' + id + '.jpg" alt="" onerror="this.style.visibility=\'hidden\'"></td>' +
-        '<td>' + id + '</td>' +
-        '<td>' + esc(b.title) + '</td>' +
-        '<td>' + esc(b.author) + '</td>' +
-        '<td>' + tags + '</td>' +
-        '<td>' + esc(formats) + '</td>';
+        '<td><input type="checkbox" data-id="' + b.id + '" ' + (state.selected.has(b.id) ? 'checked' : '') + '></td>' +
+        '<td><img class="cover" loading="lazy" src="/get/thumb_240_320/' + b.id + '.jpg" alt="" onerror="this.style.visibility=\'hidden\'"></td>' +
+        '<td>' + b.id + '</td><td>' + esc(b.title) + '</td><td>' + esc(b.author) + '</td><td>' + tags + '</td><td>' + esc(formats) + '</td>';
       tb.appendChild(tr);
     });
     tb.querySelectorAll('input[data-id]').forEach(function (cb) {
@@ -252,9 +429,7 @@
         if (cb.checked) {
           var book = state.items.find(function (x) { return x.id === id; });
           state.selected.set(id, { id: id, title: book ? book.title : String(id) });
-        } else {
-          state.selected.delete(id);
-        }
+        } else { state.selected.delete(id); }
         cb.closest('tr').classList.toggle('is-selected', cb.checked);
         renderSel();
       });
@@ -262,6 +437,7 @@
     var pages = Math.max(1, Math.ceil(state.total / state.num));
     $('page-info').textContent = state.page + ' / ' + pages;
     $('total-text').textContent = '共 ' + state.total + ' 本';
+    $('foot-info').textContent = '第 ' + state.page + ' 页，共 ' + pages + ' 页 · 全库 ' + state.total + ' 本';
     $('jump').value = state.page;
     renderSel();
   }
@@ -271,12 +447,9 @@
     $('start-btn').disabled = state.running || state.selected.size === 0;
   }
 
-  // ---------------- 弹窗 ----------------
-  var dlg = {
-    books: [], index: 0, source: '', result: '', encoding: 'utf-8', size: 0,
-    covered: [], skipped: [], processing: false, covering: false, auto: false,
-    author: '', logs: [],
-  };
+  /* ---------- 弹窗 ---------- */
+  var dlg = { books: [], index: 0, source: '', result: '', encoding: 'utf-8', size: 0,
+    covered: [], skipped: [], processing: false, auto: false, author: '', logs: [] };
 
   function openDialog() {
     dlg.books = Array.from(state.selected.values());
@@ -291,39 +464,32 @@
   function closeDialog() {
     $('overlay').classList.remove('open');
     $('dialog').classList.remove('open');
-    state.running = false;
-    renderSel();
+    state.running = false; renderSel();
   }
-
   function updateHead() {
     var total = dlg.books.length || 1;
-    var idx = Math.min(dlg.index + 1, total);
-    var pct = Math.round(dlg.index * 100 / total);
-    $('dlg-progress-text').textContent = '第 ' + idx + '/' + total + ' 本';
+    $('dlg-progress-text').textContent = '第 ' + Math.min(dlg.index + 1, total) + '/' + total + ' 本';
     $('dlg-covered').textContent = '已覆盖 ' + dlg.covered.length;
     $('dlg-skipped').textContent = '跳过 ' + dlg.skipped.length;
+    var pct = Math.round(dlg.index * 100 / total);
     $('dlg-percent').textContent = pct + '%';
     $('dlg-bar').style.width = pct + '%';
   }
-
   function log(msg) {
     dlg.logs.push(new Date().toTimeString().slice(0, 8) + ' ' + msg);
     $('d-log').textContent = dlg.logs.slice(-80).join('\n');
     $('d-log').scrollTop = $('d-log').scrollHeight;
   }
-
   function currentBook() { return dlg.books[dlg.index]; }
 
   function loadCurrent() {
     var book = currentBook();
     if (!book) return finish();
     updateHead();
-    $('d-book').textContent = book.title || ('#' + book.id);
     $('d-src').value = ''; $('d-out').value = '';
-    $('d-src-stats').textContent = ''; $('d-out-stats').textContent = '';
-    $('d-src-meta').textContent = '';
+    $('d-src-stats').textContent = ''; $('d-out-stats').textContent = ''; $('d-out-hint').textContent = '';
     $('d-author').value = ''; dlg.author = '';
-    $('d-status').textContent = '加载原文…';
+    $('d-src-enc').textContent = '…'; $('d-src-size').textContent = '…';
     return fetch(API + '/' + book.id + '/text', { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (rsp) {
@@ -333,14 +499,12 @@
         dlg.encoding = data.encoding || 'utf-8';
         dlg.size = data.size || 0;
         $('d-src').value = dlg.source.slice(0, DISPLAY_LIMIT);
-        $('d-src-meta').textContent = '（' + dlg.encoding + ' / ' + Math.round(dlg.size / 1024) + ' KB）';
+        $('d-src-enc').textContent = dlg.encoding;
+        $('d-src-size').textContent = Math.round(dlg.size / 1024) + ' KB';
         $('d-src-stats').textContent = '字符 ' + dlg.source.length.toLocaleString() +
           (dlg.source.length > DISPLAY_LIMIT ? '（仅预览前 5 万字）' : '');
-        try {
-          dlg.author = window.NovelFmt.detectAuthor(dlg.source, book.title) || '';
-        } catch (e) { dlg.author = ''; }
+        try { dlg.author = window.NovelFmt.detectAuthor(dlg.source, book.title) || ''; } catch (e) { dlg.author = ''; }
         $('d-author').value = dlg.author;
-        $('d-status').textContent = '';
         if (dlg.auto) process();
       })
       .catch(function (err) {
@@ -358,56 +522,39 @@
 
   function process() {
     if (!dlg.source) return;
-    $('d-process').disabled = true;
-    dlg.processing = true;
-    $('d-status').textContent = '排版中…';
+    dlg.processing = true; $('d-process').disabled = true;
     var mode = $('d-convert').value;
     var text = dlg.source;
     var pre = mode === 'none' ? Promise.resolve(text) :
-      fetch(API + '/convert', {
-        method: 'POST', credentials: 'include',
+      fetch(API + '/convert', { method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text, direction: mode }),
-      }).then(function (r) { return r.json(); }).then(function (rsp) {
-        if (rsp.err !== 'ok') throw new Error(rsp.msg || '转换失败');
-        return rsp.data.text;
-      });
-    return pre.then(function (t) {
-      return window.NovelFmt.formatNovelText(t, options());
-    }).then(function (out) {
-      dlg.result = out;
-      $('d-out').value = out.slice(0, DISPLAY_LIMIT);
-      $('d-out-stats').textContent = '字符 ' + out.length.toLocaleString() +
-        (out.length > DISPLAY_LIMIT ? '（仅预览前 5 万字）' : '') +
-        ' · 行 ' + out.split('\n').length.toLocaleString();
-      $('d-status').textContent = '';
-      log((currentBook().title || '') + ' 排版完成');
-      if (dlg.auto) return cover(true);
-    }).catch(function (err) {
-      log('排版失败：' + (err.message || err));
-      $('d-status').textContent = '排版失败';
-    }).finally(function () {
-      dlg.processing = false;
-      $('d-process').disabled = false;
-    });
+        body: JSON.stringify({ text: text, direction: mode }) })
+        .then(function (r) { return r.json(); })
+        .then(function (rsp) { if (rsp.err !== 'ok') throw new Error(rsp.msg || '转换失败'); return rsp.data.text; });
+    return pre.then(function (t) { return window.NovelFmt.formatNovelText(t, options()); })
+      .then(function (out) {
+        dlg.result = out;
+        $('d-out').value = out.slice(0, DISPLAY_LIMIT);
+        $('d-out-stats').textContent = '字符 ' + out.length.toLocaleString() + ' · 行 ' + out.split('\n').length.toLocaleString();
+        $('d-out-hint').textContent = out.length > DISPLAY_LIMIT ? '全文 ' + out.length.toLocaleString() + ' 字，此处仅预览前 5 万字；覆盖仍使用完整内容' : '';
+        log((currentBook().title || '') + ' 排版完成');
+        if (dlg.auto) return cover(true);
+      })
+      .catch(function (err) { log('排版失败：' + (err.message || err)); })
+      .finally(function () { dlg.processing = false; $('d-process').disabled = false; });
   }
 
   function cover(auto) {
     var book = currentBook();
     if (!book || !dlg.result) return Promise.resolve(false);
-    dlg.covering = true;
     $('d-cover').disabled = true;
     var author = $('d-author-on').checked ? (dlg.author || '') : '';
     return fetch(API + '/' + book.id + '/save', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: dlg.result, encoding: dlg.encoding, author: author }),
     }).then(function (r) { return r.json(); }).then(function (rsp) {
       if (rsp.err !== 'ok') throw new Error(rsp.msg || '覆盖失败');
       if (dlg.covered.indexOf(book.id) === -1) dlg.covered.push(book.id);
-      if ($('d-tag').checked && rsp.data && rsp.data.tagged === false) {
-        log('提醒：正文已覆盖，但「精校」标签未写入');
-      }
       log((book.title || '') + ' 已覆盖');
       updateHead();
       if (auto) return advance();
@@ -416,10 +563,7 @@
       log('覆盖失败：' + (err.message || err));
       if (auto) return advance();
       return false;
-    }).finally(function () {
-      dlg.covering = false;
-      $('d-cover').disabled = false;
-    });
+    }).finally(function () { $('d-cover').disabled = false; });
   }
 
   function advance() {
@@ -428,35 +572,25 @@
     $('d-out').value = ''; $('d-src').value = '';
     updateHead();
     if (dlg.index >= dlg.books.length) return finish();
-    // 每本 200ms 喘息；每 10 本再多停 800ms，给 V8 回收上一本的大字符串
     var wait = 200 + (dlg.index % 10 === 0 ? 800 : 0);
-    return new Promise(function (resolve) {
-      setTimeout(function () { resolve(loadCurrent()); }, wait);
-    });
+    return new Promise(function (resolve) { setTimeout(function () { resolve(loadCurrent()); }, wait); });
   }
 
   function finish() {
     $('dlg-main').style.display = 'none';
     $('dlg-done').style.display = 'block';
-    $('done-summary').textContent = '共 ' + dlg.books.length + ' 本，已覆盖 ' + dlg.covered.length +
-      ' 本，跳过 ' + dlg.skipped.length + ' 本';
-    $('dlg-bar').style.width = '100%';
-    $('dlg-percent').textContent = '100%';
-    state.running = false;
-    renderSel();
+    $('done-summary').textContent = '共 ' + dlg.books.length + ' 本，已覆盖 ' + dlg.covered.length + ' 本，跳过 ' + dlg.skipped.length + ' 本';
+    $('dlg-bar').style.width = '100%'; $('dlg-percent').textContent = '100%';
+    state.running = false; renderSel();
     if (window.MyBooksToolBridge && window.MyBooksToolBridge.notify) {
       window.MyBooksToolBridge.notify('排版完成：覆盖 ' + dlg.covered.length + ' 本，跳过 ' + dlg.skipped.length + ' 本', 'success');
     }
   }
 
-  // ---------------- 事件 ----------------
-  $('search-btn').addEventListener('click', function () {
-    state.search = $('q').value.trim(); state.page = 1; loadBooks();
-  });
+  /* ---------- 事件 ---------- */
+  $('search-btn').addEventListener('click', function () { state.search = $('q').value.trim(); state.page = 1; loadBooks(); });
   $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('search-btn').click(); });
-  $('page-size').addEventListener('change', function () {
-    state.num = Number(this.value) || 50; state.page = 1; loadBooks();
-  });
+  $('page-size').addEventListener('change', function () { state.num = Number(this.value) || 50; state.page = 1; loadBooks(); });
   $('prev').addEventListener('click', function () { if (state.page > 1) { state.page--; loadBooks(); } });
   $('next').addEventListener('click', function () {
     var pages = Math.max(1, Math.ceil(state.total / state.num));
@@ -464,41 +598,21 @@
   });
   $('jump').addEventListener('change', function () {
     var pages = Math.max(1, Math.ceil(state.total / state.num));
-    state.page = Math.min(pages, Math.max(1, Number(this.value) || 1));
-    loadBooks();
+    state.page = Math.min(pages, Math.max(1, Number(this.value) || 1)); loadBooks();
   });
   $('check-page').addEventListener('change', function () {
     var on = this.checked;
     state.items.forEach(function (b) {
-      if (on) state.selected.set(b.id, { id: b.id, title: b.title });
-      else state.selected.delete(b.id);
+      if (on) state.selected.set(b.id, { id: b.id, title: b.title }); else state.selected.delete(b.id);
     });
     render();
   });
-  $('clear-sel').addEventListener('click', function () {
-    state.selected.clear();
-    $('check-page').checked = false;
-    render();
-  });
-  $('start-btn').addEventListener('click', function () {
-    if (!state.selected.size) return;
-    state.running = true;
-    renderSel();
-    openDialog();
-  });
-  $('dlg-close').addEventListener('click', function () {
-    if (window.MyBooksToolBridge && window.MyBooksToolBridge.confirm) {
-      window.MyBooksToolBridge.confirm({ message: '关闭后当前进度会丢失，确定关闭？' }).then(function (ok) {
-        if (ok) closeDialog();
-      });
-    } else if (window.confirm('关闭后当前进度会丢失，确定关闭？')) {
-      closeDialog();
-    }
-  });
+  $('clear-sel').addEventListener('click', function () { state.selected.clear(); $('check-page').checked = false; render(); });
+  $('start-btn').addEventListener('click', function () { if (!state.selected.size) return; state.running = true; renderSel(); openDialog(); });
+  $('dlg-close').addEventListener('click', closeDialog);
+  $('done-close').addEventListener('click', closeDialog);
   $('dlg-skip').addEventListener('click', function () {
-    var b = currentBook();
-    if (b) { dlg.skipped.push(b.id); log((b.title || '') + ' 已跳过'); }
-    advance();
+    var b = currentBook(); if (b) { dlg.skipped.push(b.id); log((b.title || '') + ' 已跳过'); } advance();
   });
   $('d-process').addEventListener('click', function () { process(); });
   $('d-cover').addEventListener('click', function () { cover(false); });
@@ -514,10 +628,7 @@
     log('已执行章节分割');
   });
   $('d-reorder').addEventListener('click', function () {
-    if (!dlg.result) {
-      if (!dlg.source) return;
-      dlg.result = window.NovelFmt.formatNovelText(dlg.source, options());
-    }
+    if (!dlg.result) { if (!dlg.source) return; dlg.result = window.NovelFmt.formatNovelText(dlg.source, options()); }
     dlg.result = window.NovelFmt.reorderChaptersByTitle(dlg.result).output;
     $('d-out').value = dlg.result.slice(0, DISPLAY_LIMIT);
     $('d-out-stats').textContent = '字符 ' + dlg.result.length.toLocaleString();
