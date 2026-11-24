@@ -339,7 +339,7 @@
               <div class="group-title" data-i18n="group.layout">段落排版</div>
               <div class="switch-row"><span data-i18n="opt.smartLineBreak">智能换行</span><label class="switch"><input id="d-smart" type="checkbox" data-opt="smartLineBreak" checked><span></span></label></div>
               <div class="switch-row" id="d-indent-row"><span data-i18n="opt.indent">段首缩进</span><label class="switch"><input type="checkbox" data-opt="enableIndent" checked><span></span></label></div>
-              <div class="switch-row"><span data-i18n="opt.paragraphSplit">长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit" checked><span></span></label></div>
+              <div class="switch-row"><span data-i18n="opt.paragraphSplit">长段落拆分</span><label class="switch"><input type="checkbox" data-opt="enableParagraphSplit"><span></span></label></div>
               <div class="switch-row"><span data-i18n="opt.trim">清理首尾空格</span><label class="switch"><input type="checkbox" data-opt="enableTrim" checked><span></span></label></div>
 
               <div class="divider"></div>
@@ -828,6 +828,69 @@
     });
   }
 
+  var PREFS_KEY = 'novelFormat.prefs';
+  var DEFAULT_PREFS = {
+    conversionMode: 'none', smartLineBreak: true, enableIndent: true,
+    enableChapterSplit: true, enableLineEndNumbers: false, enableParagraphSplit: false,
+    enableTrim: true, removeDuplicateLines: true, mergeDuplicateChapterTitles: true,
+    specialStart: '', filterText: '', maxFilterLineLength: 0,
+    autoExport: false, autoCover: false, autoAuthor: false, tagEnabled: true
+  };
+
+  function setConvertMode(mode) {
+    document.querySelectorAll('#d-convert .seg-btn').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-val') === (mode || 'none'));
+    });
+  }
+
+  function applyPrefs(p) {
+    document.querySelectorAll('[data-opt]').forEach(function (i) {
+      var k = i.getAttribute('data-opt');
+      if (k in p) i.checked = !!p[k];
+    });
+    $('d-auto').checked = !!p.autoCover;
+    $('d-autoexport').checked = !!p.autoExport;
+    $('d-author-on').checked = !!p.autoAuthor;
+    $('d-tag').checked = p.tagEnabled !== false;
+    $('d-special').value = p.specialStart || '';
+    $('d-filter').value = p.filterText || '';
+    $('d-filter-len').value = p.maxFilterLineLength || '';
+    $('d-filter-len-row').style.display = p.filterText ? 'flex' : 'none';
+    setConvertMode(p.conversionMode);
+    syncIndentRow();
+  }
+
+  function collectPrefs() {
+    var active = document.querySelector('#d-convert .seg-btn.active');
+    var p = { conversionMode: active ? active.getAttribute('data-val') : 'none' };
+    document.querySelectorAll('[data-opt]').forEach(function (i) { p[i.getAttribute('data-opt')] = i.checked; });
+    p.autoCover = $('d-auto').checked;
+    p.autoExport = $('d-autoexport').checked;
+    p.autoAuthor = $('d-author-on').checked;
+    p.tagEnabled = $('d-tag').checked;
+    p.specialStart = $('d-special').value || '';
+    p.filterText = $('d-filter').value || '';
+    p.maxFilterLineLength = Number($('d-filter-len').value) || 0;
+    return p;
+  }
+
+  var prefsTimer = null;
+  function savePrefs() {
+    clearTimeout(prefsTimer);
+    prefsTimer = setTimeout(function () {
+      try { localStorage.setItem(PREFS_KEY, JSON.stringify(collectPrefs())); } catch (e) { /* 隐私模式忽略 */ }
+    }, 200);
+  }
+
+  function restorePrefs() {
+    var saved = {};
+    try {
+      var raw = localStorage.getItem(PREFS_KEY);
+      if (raw) saved = JSON.parse(raw) || {};
+    } catch (e) { saved = {}; }
+    applyPrefs(Object.assign({}, DEFAULT_PREFS, saved));
+  }
+
   function syncIndentRow() { $('d-indent-row').style.display = $('d-smart').checked ? '' : 'none'; }
 
   $('search-btn').addEventListener('click', function () { state.search = $('q').value.trim(); state.page = 1; loadBooks(); });
@@ -859,11 +922,17 @@
   $('d-export').addEventListener('click', exportFile);
   $('d-filter').addEventListener('input', function () { $('d-filter-len-row').style.display = this.value ? 'flex' : 'none'; });
   $('d-smart').addEventListener('change', syncIndentRow);
+  ['change', 'input'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (e.target.closest && e.target.closest('#dlg-main .panel')) savePrefs();
+    });
+  });
   syncIndentRow();
   document.querySelectorAll('#d-convert .seg-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('#d-convert .seg-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
+      savePrefs();
     });
   });
 
@@ -877,6 +946,7 @@
   i18n.onChange(refreshDynamic);
   i18n.ready.then(function () {
     i18n.applyDom(document);
+    restorePrefs();
     refreshDynamic();
     loadBooks();
   });
