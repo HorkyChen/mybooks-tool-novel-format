@@ -1,0 +1,21 @@
+{
+  "tool_id": "novel_format",
+  "name": "小说排版整理",
+  "description": "批量把 TXT 小说的段落与章节重新排版并覆盖回书库，可选追加「精校」标签",
+  "revision": "0.1.0",
+  "author": "unlimited996",
+  "publish_date": "2026-11-25",
+  "core_api_version": "1.5.0",
+  "entry_backend": "tool.NovelFormat",
+  "entry_frontend": "index.html",
+  "page": "novel_format",
+  "repo_url": "https://github.com/unlimited996/mybooks-tool-novel-format",
+  "locales": ["zh", "en"],
+  "default_locale": "zh",
+  "api_routes": [
+    { "path": "search", "handler": "tool.SearchHandler" },
+    { "path": "start", "handler": "tool.StartHandler" },
+    { "path": "status", "handler": "tool.StatusHandler" },
+    { "path": "cancel", "handler": "tool.CancelHandler" }
+  ]
+}

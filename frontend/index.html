@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>小说排版整理</title>
+  <link rel="stylesheet" href="lib/theme.css" />
+  <style>
+    .tool-head h1 { font-size: 1.35em; margin: 0 0 6px; }
+    .tool-head p { margin: 0 0 18px; }
+    .search-row { display: flex; gap: 8px; align-items: center; }
+    .search-row .mb-input { flex: 1 1 auto; }
+    .book-list { max-height: 360px; overflow: auto; border: 1px solid var(--mb-border, #e0e0e0); border-radius: 8px; }
+    .book-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-bottom: 1px solid var(--mb-border, #eee); }
+    .book-item:last-child { border-bottom: 0; }
+    .book-item__main { flex: 1 1 auto; min-width: 0; }
+    .book-item__title { font-weight: 500; word-break: break-all; }
+    .book-item__meta { font-size: 0.85em; opacity: 0.7; }
+    .book-item--disabled { opacity: 0.5; }
+    .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; }
+    .opt { display: flex; gap: 8px; align-items: center; }
+    .actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+    .progress-wrap { margin-top: 12px; }
+    .progress-meta { display: flex; justify-content: space-between; font-size: 0.85em; opacity: 0.75; margin-bottom: 4px; }
+    .log { max-height: 220px; overflow: auto; font-size: 0.85em; white-space: pre-wrap; }
+    .muted { opacity: 0.65; font-size: 0.9em; }
+    .mb-switch input { margin-right: 6px; }
+  </style>
+</head>
+<body>
+  <div class="mb-container">
+    <div class="tool-head">
+      <h1 data-i18n="title">小说排版整理</h1>
+      <p class="muted" data-i18n="intro">在服务端批量处理 TXT 小说：按段落/章节重新排版后覆盖回书库，可选追加「精校」标签。正文不会进入浏览器，长篇小说也不会把页面撑爆。</p>
+    </div>
+
+    <section>
+      <h2 data-i18n="search.title">选择书籍</h2>
+      <div class="search-row">
+        <input id="q" class="mb-input" type="text" data-i18n-placeholder="search.placeholder" placeholder="搜索书名 / 作者，或留空列出最近书籍" />
+        <button id="search-btn" class="mb-btn" data-i18n="search.button">搜索</button>
+      </div>
+      <div class="search-row" style="margin-top: 8px;">
+        <label class="opt"><input id="check-all" type="checkbox" /><span data-i18n="search.selectAll">全选当前结果</span></label>
+        <span id="selected-count" class="muted"></span>
+        <span class="mb-spacer"></span>
+        <span id="search-status" class="muted"></span>
+      </div>
+      <div id="book-list" class="book-list" style="margin-top: 8px;"></div>
+    </section>
+
+    <section>
+      <h2 data-i18n="options.title">排版选项</h2>
+      <div class="options">
+        <label class="opt"><input type="checkbox" data-opt="smartLineBreak" checked /><span data-i18n="options.smartLineBreak">智能换行</span></label>
+        <label class="opt"><input type="checkbox" data-opt="enableIndent" checked /><span data-i18n="options.indent">段首缩进</span></label>
+        <label class="opt"><input type="checkbox" data-opt="enableParagraphSplit" checked /><span data-i18n="options.paragraphSplit">长段落拆分</span></label>
+        <label class="opt"><input type="checkbox" data-opt="enableTrim" checked /><span data-i18n="options.trim">清理首尾空格</span></label>
+        <label class="opt"><input type="checkbox" data-opt="enableChapterSplit" checked /><span data-i18n="options.chapterSplit">章节标题分行</span></label>
+        <label class="opt"><input type="checkbox" data-opt="mergeDuplicateChapterTitles" checked /><span data-i18n="options.mergeTitles">合并重复章节标题</span></label>
+        <label class="opt"><input type="checkbox" data-opt="removeDuplicateLines" checked /><span data-i18n="options.dedupe">去除重复行</span></label>
+        <label class="opt"><input type="checkbox" data-opt="enableLineEndNumbers" /><span data-i18n="options.lineEndNumbers">去掉行尾数字</span></label>
+        <label class="opt"><input type="checkbox" data-opt="add_tag" checked /><span data-i18n="options.addTag">覆盖后追加「精校」标签</span></label>
+      </div>
+    </section>
+
+    <section>
+      <h2 data-i18n="run.title">开始处理</h2>
+      <div class="actions">
+        <button id="start-btn" class="mb-btn" data-i18n="run.start">开始排版</button>
+        <button id="cancel-btn" class="mb-btn mb-btn--secondary" data-i18n="run.cancel" disabled>取消</button>
+        <span id="run-status" class="muted"></span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="progress-text">0 / 0</span>
+          <span id="progress-current"></span>
+        </div>
+        <div class="mb-progress-linear"><div id="progress-bar" class="mb-progress-linear__bar" style="width: 0%"></div></div>
+      </div>
+      <pre id="log" class="mb-pre log" style="margin-top: 12px;"></pre>
+    </section>
+  </div>
+
+  <script src="/static/toolbox-bridge.js"></script>
+  <script src="lib/i18n.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var bridge = window.MyBooksToolBridge || {};
+      var i18n = window.MyBooksToolI18n.create();
+      var t = i18n.t;
+
+      var state = {
+        books: [],
+        selected: new Set(),
+        running: false,
+        pollTimer: null,
+      };
+
+      function el(id) { return document.getElementById(id); }
+
+      function renderSelected() {
+        el('selected-count').textContent = t('search.selected', { count: state.selected.size });
+        el('start-btn').disabled = state.running || state.selected.size === 0;
+      }
+
+      function renderBooks() {
+        var box = el('book-list');
+        box.innerHTML = '';
+        if (!state.books.length) {
+          box.innerHTML = '<div class="book-item"><span class="muted">' + t('search.empty') + '</span></div>';
+          return;
+        }
+        state.books.forEach(function (book) {
+          var row = document.createElement('label');
+          row.className = 'book-item' + (book.has_txt ? '' : ' book-item--disabled');
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = state.selected.has(book.id);
+          cb.disabled = !book.has_txt;
+          cb.addEventListener('change', function () {
+            if (cb.checked) state.selected.add(book.id);
+            else state.selected.delete(book.id);
+            renderSelected();
+          });
+          var main = document.createElement('div');
+          main.className = 'book-item__main';
+          var title = document.createElement('div');
+          title.className = 'book-item__title';
+          title.textContent = book.title || ('#' + book.id);
+          var meta = document.createElement('div');
+          meta.className = 'book-item__meta';
+          meta.textContent = (book.authors || '') + (book.has_txt ? '' : ' · ' + t('search.noTxt'));
+          main.appendChild(title);
+          main.appendChild(meta);
+          row.appendChild(cb);
+          row.appendChild(main);
+          box.appendChild(row);
+        });
+      }
+
+      function doSearch() {
+        var q = el('q').value.trim();
+        el('search-status').textContent = t('search.loading');
+        bridge.fetch('search?q=' + encodeURIComponent(q) + '&limit=100').then(function (rsp) {
+          if (rsp.err !== 'ok') throw new Error(rsp.msg || 'search failed');
+          state.books = rsp.data.items || [];
+          state.selected.clear();
+          el('check-all').checked = false;
+          renderBooks();
+          renderSelected();
+          el('search-status').textContent = t('search.result', { count: state.books.length });
+        }).catch(function (err) {
+          el('search-status').textContent = String(err.message || err);
+        });
+      }
+
+      function collectOptions() {
+        var options = {};
+        document.querySelectorAll('[data-opt]').forEach(function (input) {
+          options[input.getAttribute('data-opt')] = input.checked;
+        });
+        return options;
+      }
+
+      function renderStatus(data) {
+        var total = data.total || 0;
+        var processed = data.processed || 0;
+        var percent = total ? Math.round(processed * 100 / total) : 0;
+        el('progress-bar').style.width = percent + '%';
+        el('progress-text').textContent = processed + ' / ' + total +
+          '（' + t('run.success') + ' ' + (data.succeeded || 0) +
+          '，' + t('run.failed') + ' ' + (data.failed || 0) + '）';
+        el('progress-current').textContent = data.current || '';
+        el('log').textContent = (data.logs || []).join('\n');
+        el('log').scrollTop = el('log').scrollHeight;
+
+        var running = data.status === 'running';
+        state.running = running;
+        el('start-btn').disabled = running || state.selected.size === 0;
+        el('cancel-btn').disabled = !running;
+        el('run-status').textContent = running ? t('run.running') :
+          (data.status === 'done' ? t('run.done') :
+            (data.status === 'cancelled' ? t('run.cancelled') :
+              (data.status === 'failed' ? t('run.failedStatus') : '')));
+      }
+
+      function poll() {
+        bridge.fetch('status').then(function (rsp) {
+          if (rsp.err !== 'ok') throw new Error(rsp.msg || 'status failed');
+          var data = rsp.data;
+          renderStatus(data);
+          if (data.status === 'running') {
+            state.pollTimer = setTimeout(poll, 1000);
+          } else if (state.pollTimer) {
+            clearTimeout(state.pollTimer);
+            state.pollTimer = null;
+            if (data.status === 'done' && bridge.notify) {
+              bridge.notify(t('run.doneNotify', { ok: data.succeeded || 0, fail: data.failed || 0 }), 'success');
+            }
+          }
+        }).catch(function (err) {
+          el('run-status').textContent = String(err.message || err);
+        });
+      }
+
+      function start() {
+        if (state.running) return;
+        var ids = Array.from(state.selected);
+        if (!ids.length) return;
+        el('start-btn').disabled = true;
+        bridge.fetch('start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ book_ids: ids, options: collectOptions() }),
+        }).then(function (rsp) {
+          if (rsp.err !== 'ok') throw new Error(rsp.msg || 'start failed');
+          renderStatus(rsp.data || {});
+          if (state.pollTimer) clearTimeout(state.pollTimer);
+          state.pollTimer = setTimeout(poll, 800);
+        }).catch(function (err) {
+          el('run-status').textContent = String(err.message || err);
+          el('start-btn').disabled = false;
+        });
+      }
+
+      function cancel() {
+        bridge.fetch('cancel', { method: 'POST' }).catch(function () {});
+      }
+
+      el('search-btn').addEventListener('click', doSearch);
+      el('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+      el('check-all').addEventListener('change', function (e) {
+        state.selected.clear();
+        if (e.target.checked) {
+          state.books.forEach(function (b) { if (b.has_txt) state.selected.add(b.id); });
+        }
+        renderBooks();
+        renderSelected();
+      });
+      el('start-btn').addEventListener('click', start);
+      el('cancel-btn').addEventListener('click', cancel);
+
+      i18n.ready.then(function () {
+        i18n.applyDom(document);
+        renderSelected();
+        doSearch();
+        poll();
+      });
+    })();
+  </script>
+</body>
+</html>
