@@ -682,19 +682,24 @@
     var book = currentBook(); if (!book || !dlg.result) return Promise.resolve(false);
     $('d-cover').disabled = true;
     var author = $('d-author-on').checked ? (dlg.author || '') : '';
+    var tagEnabled = $('d-tag').checked;
     return api('save', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ book_id: book.id, content: dlg.result, encoding: dlg.encoding, author: author }) })
+      body: JSON.stringify({
+        book_id: book.id, content: dlg.result, encoding: dlg.encoding, author: author,
+        // 读取时的字节数 + 字符数：后端据此拒绝「文件已变化」或「结果被截断」的覆盖
+        expected_size: dlg.size || 0, source_chars: (dlg.source || '').length, tag: tagEnabled
+      }) })
       .then(function (rsp) {
         if (rsp.err !== 'ok') throw new Error(rsp.msg || 'error');
         if (dlg.covered.indexOf(book.id) === -1) dlg.covered.push(book.id);
         dlg.skipped = dlg.skipped.filter(function (x) { return x.id !== book.id; });
         // 服务端对「本来就有精校标签」的书返回 tagged=false（它只在新增标签时置 true），
         // 这里再确认一次书籍自身的标签，避免把已有标签误报成「未写入」
-        if (rsp.data && rsp.data.tagged === false &&
-            (book.tags || []).indexOf('精校') === -1) {
+        var hasTag = (book.tags || []).indexOf('精校') !== -1;
+        if (tagEnabled && rsp.data && rsp.data.tagged === false && !hasTag) {
           log(t('log.tagMissing'));
         }
-        if (rsp.data && rsp.data.tagged !== false && (book.tags || []).indexOf('精校') === -1) {
+        if (tagEnabled && rsp.data && rsp.data.tagged !== false && !hasTag) {
           book.tags = (book.tags || []).concat(['精校']);
         }
         log(t('log.covered', { title: book.title || '' }));

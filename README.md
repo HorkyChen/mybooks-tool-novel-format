@@ -26,10 +26,15 @@ MyBooks「工具箱」里的小说排版整理工具。界面按图书管理的�
 |---|---|---|
 | GET | `books?page=&num=&search=&desc=` | 书籍列表（id/标题/作者/标签/格式） |
 | GET | `text?book_id=` | 读取 TXT 全文；自动识别 BOM / UTF-8 / GB18030 / Big5 |
-| POST | `save` | 用排版结果覆盖 TXT，按需更新作者、追加「精校」标签 |
+| POST | `save` | 覆盖 TXT（`content`/`encoding`/`expected_size`/`source_chars`/`author`/`tag`） |
 | POST | `convert` | 繁简转换（复用宿主的 OpenCC 引擎） |
 
-`save` 成功后会用宿主 `ExtractService` 强制重建 TXT 章节索引，避免阅读器跳章错位。
+`save` 会校验 `expected_size` 与当前文件大小一致、结果长度不低于原文的 10%，避免文件已变化
+或误传预览片段时覆盖；成功后用宿主 `ExtractService` 强制重建 TXT 章节索引，并按 `tag`
+决定是否追加「精校」标签。`save` 仅管理员可用，其余读接口登录即可。
+
+耗时操作不占用 Tornado 主线程：列表/读取走宿主只读线程池（`run_calibre_read_async`），
+覆盖走 calibre 写线程池（`run_calibre_async`），繁简转换走通用线程池。
 
 ## 依赖
 
